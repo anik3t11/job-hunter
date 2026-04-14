@@ -4,9 +4,64 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Job Hunter</title>
-  <link rel="stylesheet" href="/static/css/styles.css?v=3" />
+  <link rel="stylesheet" href="/static/css/styles.css?v=4" />
 </head>
 <body>
+
+<!-- ══════════════════════════════════════════════
+     AUTH OVERLAY
+════════════════════════════════════════════════ -->
+<div id="auth-overlay" class="auth-overlay">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <span class="auth-brand-icon">🎯</span>
+      <h1 class="auth-brand-name">Job Hunter</h1>
+      <p class="auth-brand-sub">Your personal job hunting command center</p>
+    </div>
+
+    <!-- Login Form -->
+    <div id="auth-login" class="auth-form active">
+      <h2 class="auth-title">Welcome back</h2>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="login-email" placeholder="you@gmail.com" autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="login-password" placeholder="Your password" autocomplete="current-password" />
+      </div>
+      <div id="login-error" class="auth-error hidden"></div>
+      <button class="btn btn-primary btn-full" id="login-btn">Sign In</button>
+      <p class="auth-switch">Don't have an account? <a href="#" id="to-signup">Request access</a></p>
+    </div>
+
+    <!-- Signup Form -->
+    <div id="auth-signup" class="auth-form">
+      <h2 class="auth-title">Create account</h2>
+      <p class="auth-hint">You need an invite to register. Ask the admin to whitelist your email.</p>
+      <div class="form-group">
+        <label>Full Name</label>
+        <input type="text" id="signup-name" placeholder="Your full name" />
+      </div>
+      <div class="form-group">
+        <label>Email</label>
+        <input type="email" id="signup-email" placeholder="your-whitelisted@email.com" autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label>Password</label>
+        <input type="password" id="signup-password" placeholder="Choose a strong password" autocomplete="new-password" />
+      </div>
+      <div id="signup-error" class="auth-error hidden"></div>
+      <button class="btn btn-primary btn-full" id="signup-btn">Create Account</button>
+      <p class="auth-switch">Already have an account? <a href="#" id="to-login">Sign in</a></p>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     MAIN APP (hidden until authenticated)
+════════════════════════════════════════════════ -->
+<div id="app" class="hidden">
 
 <!-- ── Navbar ── -->
 <nav class="navbar">
@@ -15,22 +70,27 @@
     <span class="brand-name">Job Hunter</span>
   </div>
   <div class="navbar-links">
-    <a href="#jobs"     class="nav-link active" data-page="jobs">Jobs</a>
-    <a href="#outreach" class="nav-link" data-page="outreach">
+    <a href="#jobs"      class="nav-link active" data-page="jobs">Jobs</a>
+    <a href="#resume"    class="nav-link" data-page="resume">Resume</a>
+    <a href="#outreach"  class="nav-link" data-page="outreach">
       Outreach <span id="outreach-badge" class="badge hidden">0</span>
     </a>
-    <a href="#tracker"  class="nav-link" data-page="tracker">Tracker</a>
-    <a href="#followup" class="nav-link" data-page="followup">
+    <a href="#analytics" class="nav-link" data-page="analytics">Analytics</a>
+    <a href="#tracker"   class="nav-link" data-page="tracker">Tracker</a>
+    <a href="#followup"  class="nav-link" data-page="followup">
       Follow-ups <span id="followup-badge" class="badge hidden">0</span>
     </a>
-    <a href="#settings" class="nav-link" data-page="settings">Settings</a>
+    <a href="#settings"  class="nav-link" data-page="settings">Settings</a>
   </div>
-  <div class="navbar-stats" id="navbar-stats">
-    <span class="stat-pill">Loading...</span>
+  <div class="navbar-right">
+    <div class="navbar-stats" id="navbar-stats"></div>
+    <button class="btn btn-sm btn-ghost" onclick="window.location='/api/jobs/export/csv'" title="Export CSV">↓ CSV</button>
+    <div class="user-chip" id="user-chip">
+      <span class="user-avatar" id="user-avatar">?</span>
+      <span class="user-name" id="user-name-display">User</span>
+      <button class="btn btn-sm btn-ghost" id="logout-btn" title="Log out">↩</button>
+    </div>
   </div>
-  <button class="btn btn-sm btn-ghost" onclick="window.location='/api/jobs/export/csv'" title="Export CSV">
-    ↓ CSV
-  </button>
 </nav>
 
 <!-- ── Toast ── -->
@@ -46,7 +106,6 @@
     <form id="search-form">
       <div class="form-grid">
 
-        <!-- Country -->
         <div class="form-group">
           <label>Country</label>
           <select id="s-country">
@@ -63,40 +122,33 @@
           </select>
         </div>
 
-        <!-- Role -->
         <div class="form-group">
           <label>Job Role <span class="label-hint">(searches related roles automatically)</span></label>
           <input type="text" id="s-role" placeholder="e.g. Data Analyst" required />
         </div>
 
-        <!-- Target Salary -->
         <div class="form-group">
           <label>Target Salary <span class="label-hint">(±30% flex)</span></label>
           <input type="number" id="s-salary" placeholder="e.g. 1000000" min="0" />
         </div>
 
-        <!-- Experience -->
         <div class="form-group">
           <label>Your Experience (years)</label>
           <input type="number" id="s-exp" placeholder="e.g. 4" min="0" max="40" step="0.5" />
         </div>
 
-        <!-- Multi-location tag input -->
         <div class="form-group full-width">
           <label>Locations <span class="label-hint">(add multiple)</span></label>
           <div class="tag-input-wrapper" id="location-tag-wrapper">
             <div class="tags-container" id="location-tags"></div>
-            <input type="text" id="location-input" class="tag-input" placeholder="Type city and press Enter or select below..." autocomplete="off" />
+            <input type="text" id="location-input" class="tag-input" placeholder="Type city and press Enter..." autocomplete="off" />
           </div>
           <div class="city-suggestions" id="city-suggestions"></div>
         </div>
 
-        <!-- Sources -->
         <div class="form-group full-width sources-group">
           <label>Sources</label>
-          <div class="checkbox-row" id="sources-row">
-            <!-- populated by JS based on country -->
-          </div>
+          <div class="checkbox-row" id="sources-row"></div>
         </div>
 
       </div>
@@ -121,6 +173,8 @@
         <button class="tab" data-value="reviewed">Reviewed</button>
         <button class="tab" data-value="applied">Applied</button>
         <button class="tab" data-value="interview">Interview</button>
+        <button class="tab" data-value="offer">Offer</button>
+        <button class="tab" data-value="rejected">Rejected</button>
       </div>
     </div>
     <div class="filter-group">
@@ -153,7 +207,6 @@
     </div>
   </section>
 
-  <!-- Jobs Grid -->
   <section class="jobs-section">
     <div id="jobs-grid" class="jobs-grid">
       <div class="empty-state" id="empty-state">
@@ -166,12 +219,63 @@
 </main>
 
 <!-- ══════════════════════════════════════════════
-     OUTREACH PAGE (Social Hiring Posts)
+     RESUME PAGE
+════════════════════════════════════════════════ -->
+<main id="page-resume" class="page hidden">
+
+  <section class="card resume-section">
+    <h2 class="section-title">Resume Analyzer</h2>
+    <p class="section-sub">Upload your PDF or DOCX. We'll parse your details, score your resume, and tell you exactly what to improve.</p>
+
+    <div class="resume-drop-zone" id="resume-drop-zone">
+      <div class="drop-icon">📄</div>
+      <p class="drop-hint">Drag &amp; drop your resume here<br/><span class="drop-sub">or click to browse (PDF / DOCX)</span></p>
+      <input type="file" id="resume-file-input" accept=".pdf,.docx,.doc" class="hidden" />
+    </div>
+
+    <div class="form-group" style="max-width:360px; margin-top:1rem">
+      <label>Target Role <span class="label-hint">(for scoring)</span></label>
+      <input type="text" id="resume-target-role" placeholder="e.g. Data Analyst" />
+    </div>
+
+    <div id="resume-parse-result" class="resume-parse-result hidden">
+      <!-- Filled by resume.js after parse -->
+    </div>
+  </section>
+
+  <!-- Score Card — shown after parse -->
+  <section id="resume-score-section" class="card hidden" style="margin-top:1.5rem">
+    <h2 class="section-title">Resume Score</h2>
+    <div class="resume-score-layout">
+      <div class="score-circle-wrap">
+        <svg class="score-ring" viewBox="0 0 120 120">
+          <circle class="ring-bg" cx="60" cy="60" r="50"/>
+          <circle class="ring-fill" id="score-ring-fill" cx="60" cy="60" r="50"/>
+        </svg>
+        <div class="score-circle-text">
+          <span class="score-number" id="resume-score-number">0</span>
+          <span class="score-label">/ 100</span>
+        </div>
+      </div>
+      <div class="score-breakdown" id="score-breakdown">
+        <!-- dimension bars filled by resume.js -->
+      </div>
+    </div>
+    <div id="resume-tips" class="resume-tips hidden">
+      <h3 class="tips-title">How to improve</h3>
+      <ul class="tips-list" id="tips-list"></ul>
+    </div>
+  </section>
+
+</main>
+
+<!-- ══════════════════════════════════════════════
+     OUTREACH PAGE
 ════════════════════════════════════════════════ -->
 <main id="page-outreach" class="page hidden">
   <section class="search-panel card">
     <h2 class="section-title">Direct Outreach</h2>
-    <p class="section-sub">Find recruiters actively posting about openings on LinkedIn, Reddit, and Twitter. Send them a direct message.</p>
+    <p class="section-sub">Find recruiters actively posting about openings on LinkedIn, Reddit, and Twitter. Only genuine posts with contact info are shown.</p>
     <div class="form-grid">
       <div class="form-group">
         <label>Country</label>
@@ -192,15 +296,9 @@
       <div class="form-group full-width sources-group">
         <label>Platforms</label>
         <div class="checkbox-row">
-          <label class="checkbox-label">
-            <input type="checkbox" value="linkedin_post" checked /> LinkedIn Posts
-          </label>
-          <label class="checkbox-label">
-            <input type="checkbox" value="reddit" checked /> Reddit
-          </label>
-          <label class="checkbox-label">
-            <input type="checkbox" value="twitter" checked /> Twitter / X
-          </label>
+          <label class="checkbox-label"><input type="checkbox" value="linkedin_post" checked /> LinkedIn Posts</label>
+          <label class="checkbox-label"><input type="checkbox" value="reddit" checked /> Reddit</label>
+          <label class="checkbox-label"><input type="checkbox" value="twitter" checked /> Twitter / X</label>
         </div>
       </div>
     </div>
@@ -212,7 +310,6 @@
     <div id="social-status" class="search-status hidden"></div>
   </section>
 
-  <!-- Social Filter Bar -->
   <section class="filter-bar">
     <div class="filter-group">
       <span class="filter-label">Platform:</span>
@@ -246,6 +343,61 @@
 </main>
 
 <!-- ══════════════════════════════════════════════
+     ANALYTICS PAGE
+════════════════════════════════════════════════ -->
+<main id="page-analytics" class="page hidden">
+  <section class="analytics-header">
+    <h2 class="section-title">Application Analytics</h2>
+    <p class="section-sub">Track your job search performance at a glance.</p>
+    <button class="btn btn-ghost btn-sm" id="analytics-refresh-btn">↻ Refresh</button>
+  </section>
+
+  <!-- Stat Cards -->
+  <div class="analytics-stats" id="analytics-stats">
+    <div class="stat-card">
+      <div class="stat-value" id="a-total">—</div>
+      <div class="stat-label">Total Jobs Found</div>
+    </div>
+    <div class="stat-card stat-card-blue">
+      <div class="stat-value" id="a-applied">—</div>
+      <div class="stat-label">Applications Sent</div>
+    </div>
+    <div class="stat-card stat-card-amber">
+      <div class="stat-value" id="a-interviews">—</div>
+      <div class="stat-label">Interviews</div>
+    </div>
+    <div class="stat-card stat-card-green">
+      <div class="stat-value" id="a-offers">—</div>
+      <div class="stat-label">Offers</div>
+    </div>
+    <div class="stat-card stat-card-purple">
+      <div class="stat-value" id="a-response">—</div>
+      <div class="stat-label">Response Rate</div>
+    </div>
+  </div>
+
+  <div class="analytics-grid">
+    <!-- Applications by Source -->
+    <section class="card analytics-card">
+      <h3 class="card-title">Applications by Source</h3>
+      <div id="a-by-source" class="bar-chart"></div>
+    </section>
+
+    <!-- Score Distribution -->
+    <section class="card analytics-card">
+      <h3 class="card-title">Score Distribution</h3>
+      <div id="a-score-dist" class="bar-chart"></div>
+    </section>
+
+    <!-- Skill Gaps -->
+    <section class="card analytics-card analytics-card-wide">
+      <h3 class="card-title">Top Skill Gaps <span class="card-hint">(skills appearing in job descriptions you lack)</span></h3>
+      <div id="a-skill-gaps" class="skill-gap-list"></div>
+    </section>
+  </div>
+</main>
+
+<!-- ══════════════════════════════════════════════
      TRACKER PAGE
 ════════════════════════════════════════════════ -->
 <main id="page-tracker" class="page hidden">
@@ -262,7 +414,7 @@
 <main id="page-followup" class="page hidden">
   <section class="tracker-header">
     <h2 class="section-title">Follow-ups Due</h2>
-    <p class="section-sub">Recruiters who haven't replied yet. One click to send a follow-up.</p>
+    <p class="section-sub">Recruiters who haven't replied yet. One click to send a nudge.</p>
   </section>
   <div id="followup-list" class="followup-list"></div>
 </main>
@@ -271,18 +423,6 @@
      SETTINGS PAGE
 ════════════════════════════════════════════════ -->
 <main id="page-settings" class="page hidden">
-
-  <!-- Resume Drop Zone -->
-  <section class="card resume-section" id="resume-section">
-    <h2 class="section-title">Resume</h2>
-    <p class="section-sub">Drop your PDF or DOCX resume — skills, experience, and notice period will be auto-filled below.</p>
-    <div class="resume-drop-zone" id="resume-drop-zone">
-      <div class="drop-icon">📄</div>
-      <p class="drop-hint">Drag &amp; drop your resume here<br/><span class="drop-sub">or click to browse</span></p>
-      <input type="file" id="resume-file-input" accept=".pdf,.docx,.doc" class="hidden" />
-    </div>
-    <div id="resume-parse-result" class="resume-parse-result hidden"></div>
-  </section>
 
   <section class="settings-panel card">
     <h2 class="section-title">Your Profile</h2>
@@ -314,16 +454,15 @@
           <input type="number" id="cfg-salary" placeholder="e.g. 1000000" min="0" />
         </div>
         <div class="form-group full-width">
-          <label>Resume Summary (used in cold emails)</label>
+          <label>Resume Summary <span class="label-hint">(used in cold emails)</span></label>
           <textarea id="cfg-resume" rows="4" placeholder="Brief summary of your background and key achievements..."></textarea>
         </div>
       </div>
 
-      <h2 class="section-title" style="margin-top:2rem">Email Settings</h2>
+      <h3 class="section-title" style="margin-top:2rem">Email Settings</h3>
       <p class="section-sub">
-        Requires a Gmail
-        <a href="https://support.google.com/accounts/answer/185833" target="_blank">App Password</a>
-        (not your regular password).
+        Requires a Gmail <a href="https://support.google.com/accounts/answer/185833" target="_blank">App Password</a>
+        (not your regular Gmail password).
       </p>
       <div class="form-grid">
         <div class="form-group">
@@ -344,7 +483,32 @@
       </div>
     </form>
   </section>
+
+  <!-- Admin Panel — only shown to admin users -->
+  <section class="settings-panel card admin-panel hidden" id="admin-panel">
+    <h2 class="section-title">Admin — Invite Whitelist</h2>
+    <p class="section-sub">Add an email here to allow that person to register. They'll be able to create a password and use Job Hunter.</p>
+    <div class="admin-add-row">
+      <input type="email" id="admin-invite-email" placeholder="friend@gmail.com" style="flex:1" />
+      <button class="btn btn-primary" id="admin-add-btn">Add to Whitelist</button>
+    </div>
+    <div id="admin-invite-error" class="auth-error hidden" style="margin-top:.5rem"></div>
+    <table class="admin-table" id="admin-whitelist-table">
+      <thead>
+        <tr>
+          <th>Email</th>
+          <th>Status</th>
+          <th>Added</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="admin-whitelist-body"></tbody>
+    </table>
+  </section>
+
 </main>
+
+</div><!-- /#app -->
 
 <!-- ══════════════════════════════════════════════
      JOB DETAIL MODAL
@@ -357,7 +521,7 @@
 </div>
 
 <!-- ══════════════════════════════════════════════
-     EMAIL MODAL (cold email + follow-up + outreach)
+     EMAIL MODAL
 ════════════════════════════════════════════════ -->
 <div id="email-modal-overlay" class="modal-overlay hidden">
   <div class="modal-box modal-email">
@@ -387,14 +551,19 @@
   </div>
 </div>
 
-<script src="/static/js/app.js?v=3"></script>
-<script src="/static/js/jobs.js?v=3"></script>
-<script src="/static/js/tracker.js?v=3"></script>
-<script src="/static/js/followup.js?v=3"></script>
-<script src="/static/js/settings.js?v=3"></script>
-<script src="/static/js/email.js?v=3"></script>
-<script src="/static/js/locations.js?v=3"></script>
-<script src="/static/js/outreach.js?v=3"></script>
-<script src="/static/js/resume.js?v=3"></script>
+<!-- ══════════════════════════════════════════════
+     SCRIPTS
+════════════════════════════════════════════════ -->
+<script src="/static/js/app.js?v=4"></script>
+<script src="/static/js/auth.js?v=4"></script>
+<script src="/static/js/jobs.js?v=4"></script>
+<script src="/static/js/tracker.js?v=4"></script>
+<script src="/static/js/followup.js?v=4"></script>
+<script src="/static/js/settings.js?v=4"></script>
+<script src="/static/js/email.js?v=4"></script>
+<script src="/static/js/locations.js?v=4"></script>
+<script src="/static/js/outreach.js?v=4"></script>
+<script src="/static/js/resume.js?v=4"></script>
+<script src="/static/js/analytics.js?v=4"></script>
 </body>
 </html>

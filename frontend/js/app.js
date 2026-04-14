@@ -8,14 +8,20 @@ const State = {
   filters: { status: 'all', source: 'all', minScore: null, sort: 'score' },
 };
 
-/* ── API client ── */
+/* ── API client (with JWT) ── */
 async function api(method, path, body = null) {
-  const opts = {
-    method,
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
-  };
+  const token = localStorage.getItem('jh_token');
+  const headers = { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const opts = { method, headers };
   if (body) opts.body = JSON.stringify(body);
   const resp = await fetch(path, opts);
+  if (resp.status === 401) {
+    localStorage.removeItem('jh_token');
+    document.getElementById('auth-overlay').classList.remove('hidden');
+    document.getElementById('app').classList.add('hidden');
+    throw new Error('Session expired. Please log in again.');
+  }
   if (!resp.ok) {
     const err = await resp.json().catch(() => ({ detail: resp.statusText }));
     throw new Error(err.detail || 'Request failed');
@@ -34,7 +40,10 @@ function showToast(msg, type = 'info') {
 }
 
 /* ── Router ── */
+const VALID_PAGES = ['jobs', 'resume', 'outreach', 'analytics', 'tracker', 'followup', 'settings'];
+
 function navigate(page) {
+  if (!VALID_PAGES.includes(page)) page = 'jobs';
   document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
   const target = document.getElementById(`page-${page}`);
@@ -42,11 +51,12 @@ function navigate(page) {
   const link = document.querySelector(`.nav-link[data-page="${page}"]`);
   if (link) link.classList.add('active');
   State.currentPage = page;
-  if (page === 'tracker')  renderTracker();
-  if (page === 'followup') renderFollowups();
-  if (page === 'outreach') loadSocialPosts(1);
-  if (page === 'settings') loadSettings();
-  if (page === 'jobs')     loadJobs();
+  if (page === 'tracker')   renderTracker();
+  if (page === 'followup')  renderFollowups();
+  if (page === 'outreach')  loadSocialPosts(1);
+  if (page === 'settings')  loadSettings();
+  if (page === 'jobs')      loadJobs();
+  if (page === 'analytics') loadAnalytics();
 }
 
 /* ── Navbar stats ── */
@@ -55,11 +65,10 @@ async function refreshStats() {
     const s = await api('GET', '/api/jobs/stats');
     const el = document.getElementById('navbar-stats');
     el.innerHTML = `
-      <span class="stat-pill">📋 ${s.total_jobs || 0} jobs</span>
+      <span class="stat-pill">📋 ${s.total_jobs || 0}</span>
       <span class="stat-pill">✅ ${s.by_status?.applied || 0} applied</span>
       <span class="stat-pill">🎤 ${s.by_status?.interview || 0} interviews</span>
     `;
-    // Follow-up badge
     const due = s.followup_due || 0;
     const badge = document.getElementById('followup-badge');
     badge.textContent = due;
@@ -96,24 +105,21 @@ function escAttr(s) { return String(s||'').replace(/"/g,'&quot;'); }
 
 /* ── Init ── */
 document.addEventListener('DOMContentLoaded', () => {
-  // Tag input + sources
   locationTags = new TagInput('location-tag-wrapper','location-input','city-suggestions','s-country');
   renderSourceCheckboxes('IN');
 
-  // Hash router
   const handleHash = () => {
     const page = location.hash.replace('#','') || 'jobs';
-    navigate(['jobs','outreach','tracker','followup','settings'].includes(page) ? page : 'jobs');
+    navigate(VALID_PAGES.includes(page) ? page : 'jobs');
   };
   window.addEventListener('hashchange', handleHash);
   handleHash();
 
-  // Nav links
   document.querySelectorAll('.nav-link').forEach(l => {
     l.addEventListener('click', e => { e.preventDefault(); location.hash = l.dataset.page; });
   });
 
-  // Modal close
+  // Modals
   document.getElementById('modal-overlay').addEventListener('click', e => {
     if (e.target === e.currentTarget) closeModal();
   });

@@ -1,72 +1,64 @@
 from __future__ import annotations
-"""
-Resume upload route.
-POST /api/resume/upload  — multipart file, returns parsed profile
-POST /api/resume/save    — save parsed profile fields to settings
-"""
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, UploadFile, File, HTTPException, Depends
 from backend.services.resume_parser import parse_resume
 from backend.database import save_settings, get_settings
+from backend.services.auth_service import get_current_user
 
 router = APIRouter(prefix="/api/resume", tags=["resume"])
 
 
 @router.post("/upload")
-async def upload_resume(file: UploadFile = File(...)):
-    """
-    Accept a PDF or DOCX resume, parse it, return structured profile.
-    Does NOT auto-save — client reviews first, then calls /save.
-    """
+async def upload_resume(
+    file:        UploadFile = File(...),
+    target_role: str        = "",
+    user:        dict       = Depends(get_current_user),
+):
     if not file.filename:
-        raise HTTPException(status_code=400, detail="No file provided")
-
+        raise HTTPException(400, "No file provided")
     ext = file.filename.rsplit(".", 1)[-1].lower() if "." in file.filename else ""
     if ext not in ("pdf", "docx", "doc"):
-        raise HTTPException(
-            status_code=400,
-            detail="Unsupported file type '{}'. Please upload PDF or DOCX.".format(ext)
-        )
-
+        raise HTTPException(400, "Unsupported file type. Upload PDF or DOCX.")
+    content = await file.read()
+    if len(content) > 5 * 1024 * 1024:
+        raise HTTPException(400, "File too large (max 5 MB)")
+    if not target_role:
+        settings    = get_settings(user["user_id"])
+        target_role = settings.get("last_search_role", "")
     try:
-        content = await file.read()
-        if len(content) > 5 * 1024 * 1024:  # 5 MB limit
-            raise HTTPException(status_code=400, detail="File too large (max 5 MB)")
-        profile = parse_resume(content, file.filename)
+        profile = parse_resume(content, file.filename, target_role)
     except ValueError as e:
-        raise HTTPException(status_code=422, detail=str(e))
+        raise HTTPException(422, str(e))
     except Exception as e:
-        raise HTTPException(status_code=500, detail="Parse failed: {}".format(e))
-
-    return {"ok": True, "profile": profile}
+        raise HTTPException(500, "Parse failed: {}".format(e))
+    score_data = {
+        "score":     profile.get("score", 0),
+        "breakdown": profile.get("score_breakdown", {}),
+        "tips":      profile.get("tips", []),
+    }
+    return {"ok": True, "profile": profile, "score": score_data}
 
 
 @router.post("/save")
-async def save_resume_profile(data: dict):
-    """
-    Save extracted resume fields into settings so they pre-fill the profile form.
-    Client sends only the fields the user confirmed.
-    """
+async def save_resume_profile(data: dict, user: dict = Depends(get_current_user)):
     allowed = {
         "user_name", "user_skills", "user_experience_years",
         "notice_period", "resume_summary", "resume_text",
     }
     updates = {k: v for k, v in data.items() if k in allowed}
     if not updates:
-        raise HTTPException(status_code=400, detail="No valid fields to save")
-
-    save_settings(updates)
+        raise HTTPException(400, "No valid fields to save")
+    save_settings(user["user_id"], updates)
     return {"ok": True, "saved": list(updates.keys())}
 
 
 @router.get("/profile")
-async def get_resume_profile():
-    """Return current resume-related settings for the profile panel."""
-    settings = get_settings()
+async def get_profile(user: dict = Depends(get_current_user)):
+    s = get_settings(user["user_id"])
     return {
-        "user_name": settings.get("user_name", ""),
-        "user_skills": settings.get("user_skills", ""),
-        "user_experience_years": settings.get("user_experience_years", "0"),
-        "notice_period": settings.get("notice_period", ""),
-        "resume_summary": settings.get("resume_summary", ""),
-        "has_resume": bool(settings.get("resume_text", "")),
+        "user_name":            s.get("user_name", ""),
+        "user_skills":          s.get("user_skills", ""),
+        "user_experience_years": s.get("user_experience_years", "0"),
+        "notice_period":        s.get("notice_period", ""),
+        "resume_summary":       s.get("resume_summary", ""),
+        "has_resume":           bool(s.get("resume_text", "")),
     }

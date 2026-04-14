@@ -61,6 +61,20 @@ function renderSocialPosts(posts) {
     btn.addEventListener('click', () => markContacted(+btn.dataset.id)));
 }
 
+function legitimacyBar(score) {
+  const pct = Math.min(score || 0, 100);
+  const color = pct >= 70 ? '#059669' : pct >= 40 ? '#d97706' : '#e11d48';
+  const label = pct >= 70 ? 'High' : pct >= 40 ? 'Medium' : 'Low';
+  return `
+    <div class="legitimacy-row" title="Legitimacy score: ${pct}/100">
+      <span class="legitimacy-label">Legitimacy</span>
+      <div class="legitimacy-track">
+        <div class="legitimacy-fill" style="width:${pct}%;background:${color}"></div>
+      </div>
+      <span class="legitimacy-val" style="color:${color}">${label} (${pct})</span>
+    </div>`;
+}
+
 function socialCard(post) {
   const isNew       = post.status === 'new';
   const isDismissed = post.status === 'dismissed';
@@ -91,6 +105,7 @@ function socialCard(post) {
       </div>
       <div class="post-text">${escHtml((post.post_text || '').slice(0, 300))}${post.post_text?.length > 300 ? '…' : ''}</div>
       ${emailLine}
+      ${legitimacyBar(post.legitimacy_score)}
       <div class="card-footer">
         <div class="card-actions">
           <a href="${escAttr(post.post_url)}" target="_blank" class="btn btn-sm btn-ghost">View Post ↗</a>

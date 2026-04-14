@@ -9,7 +9,6 @@ async function loadSettings() {
     document.getElementById('cfg-notice').value    = s.notice_period || '';
     document.getElementById('cfg-resume').value    = s.resume_summary || '';
     document.getElementById('cfg-gmail').value     = s.gmail_address || '';
-    // Never pre-fill password
   } catch (err) {
     showToast(`Could not load settings: ${err.message}`, 'error');
   }
@@ -47,10 +46,10 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       const res = await api('POST', '/api/email/test');
       el.textContent = res.ok ? `✓ ${res.message}` : `✗ ${res.message}`;
-      el.className = `test-result ${res.ok ? 'ok' : 'err'}`;
+      el.className   = `test-result ${res.ok ? 'ok' : 'err'}`;
     } catch (err) {
       el.textContent = `✗ ${err.message}`;
-      el.className = 'test-result err';
+      el.className   = 'test-result err';
     }
   });
 });
