@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Job Hunter</title>
+  <link rel="stylesheet" href="/static/css/styles.css?v=3" />
+</head>
+<body>
+
+<!-- ── Navbar ── -->
+<nav class="navbar">
+  <div class="navbar-brand">
+    <span class="brand-icon">🎯</span>
+    <span class="brand-name">Job Hunter</span>
+  </div>
+  <div class="navbar-links">
+    <a href="#jobs"     class="nav-link active" data-page="jobs">Jobs</a>
+    <a href="#outreach" class="nav-link" data-page="outreach">
+      Outreach <span id="outreach-badge" class="badge hidden">0</span>
+    </a>
+    <a href="#tracker"  class="nav-link" data-page="tracker">Tracker</a>
+    <a href="#followup" class="nav-link" data-page="followup">
+      Follow-ups <span id="followup-badge" class="badge hidden">0</span>
+    </a>
+    <a href="#settings" class="nav-link" data-page="settings">Settings</a>
+  </div>
+  <div class="navbar-stats" id="navbar-stats">
+    <span class="stat-pill">Loading...</span>
+  </div>
+  <button class="btn btn-sm btn-ghost" onclick="window.location='/api/jobs/export/csv'" title="Export CSV">
+    ↓ CSV
+  </button>
+</nav>
+
+<!-- ── Toast ── -->
+<div id="toast" class="toast hidden"></div>
+
+<!-- ══════════════════════════════════════════════
+     JOBS PAGE
+════════════════════════════════════════════════ -->
+<main id="page-jobs" class="page active">
+
+  <section class="search-panel card">
+    <h2 class="section-title">Find Jobs</h2>
+    <form id="search-form">
+      <div class="form-grid">
+
+        <!-- Country -->
+        <div class="form-group">
+          <label>Country</label>
+          <select id="s-country">
+            <option value="IN">🇮🇳 India</option>
+            <option value="US">🇺🇸 United States</option>
+            <option value="GB">🇬🇧 United Kingdom</option>
+            <option value="CA">🇨🇦 Canada</option>
+            <option value="AU">🇦🇺 Australia</option>
+            <option value="SG">🇸🇬 Singapore</option>
+            <option value="AE">🇦🇪 UAE</option>
+            <option value="DE">🇩🇪 Germany</option>
+            <option value="NL">🇳🇱 Netherlands</option>
+            <option value="JP">🇯🇵 Japan</option>
+          </select>
+        </div>
+
+        <!-- Role -->
+        <div class="form-group">
+          <label>Job Role <span class="label-hint">(searches related roles automatically)</span></label>
+          <input type="text" id="s-role" placeholder="e.g. Data Analyst" required />
+        </div>
+
+        <!-- Target Salary -->
+        <div class="form-group">
+          <label>Target Salary <span class="label-hint">(±30% flex)</span></label>
+          <input type="number" id="s-salary" placeholder="e.g. 1000000" min="0" />
+        </div>
+
+        <!-- Experience -->
+        <div class="form-group">
+          <label>Your Experience (years)</label>
+          <input type="number" id="s-exp" placeholder="e.g. 4" min="0" max="40" step="0.5" />
+        </div>
+
+        <!-- Multi-location tag input -->
+        <div class="form-group full-width">
+          <label>Locations <span class="label-hint">(add multiple)</span></label>
+          <div class="tag-input-wrapper" id="location-tag-wrapper">
+            <div class="tags-container" id="location-tags"></div>
+            <input type="text" id="location-input" class="tag-input" placeholder="Type city and press Enter or select below..." autocomplete="off" />
+          </div>
+          <div class="city-suggestions" id="city-suggestions"></div>
+        </div>
+
+        <!-- Sources -->
+        <div class="form-group full-width sources-group">
+          <label>Sources</label>
+          <div class="checkbox-row" id="sources-row">
+            <!-- populated by JS based on country -->
+          </div>
+        </div>
+
+      </div>
+      <div class="search-actions">
+        <button type="submit" class="btn btn-primary" id="search-btn">
+          <span class="btn-icon">🔍</span> Search Jobs
+        </button>
+        <button type="button" class="btn btn-ghost" id="clear-btn">Clear All Jobs</button>
+      </div>
+    </form>
+    <div id="search-status" class="search-status hidden"></div>
+    <div id="variants-info" class="variants-info hidden"></div>
+  </section>
+
+  <!-- Filter Bar -->
+  <section class="filter-bar">
+    <div class="filter-group">
+      <span class="filter-label">Status:</span>
+      <div class="filter-tabs" id="status-tabs">
+        <button class="tab active" data-value="all">All</button>
+        <button class="tab" data-value="new">New</button>
+        <button class="tab" data-value="reviewed">Reviewed</button>
+        <button class="tab" data-value="applied">Applied</button>
+        <button class="tab" data-value="interview">Interview</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Score:</span>
+      <div class="filter-tabs" id="score-tabs">
+        <button class="tab active" data-value="">All</button>
+        <button class="tab" data-value="70">70+</button>
+        <button class="tab" data-value="40">40–69</button>
+        <button class="tab" data-value="0">Under 40</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Source:</span>
+      <div class="filter-tabs" id="source-tabs">
+        <button class="tab active" data-value="all">All</button>
+        <button class="tab" data-value="linkedin">LinkedIn</button>
+        <button class="tab" data-value="naukri">Naukri</button>
+        <button class="tab" data-value="indeed">Indeed</button>
+        <button class="tab" data-value="foundit">Foundit</button>
+        <button class="tab" data-value="wellfound">Wellfound</button>
+      </div>
+    </div>
+    <div class="filter-group sort-group">
+      <span class="filter-label">Sort:</span>
+      <select id="sort-select" class="select-sm">
+        <option value="score">Match Score</option>
+        <option value="hot">🔥 Hot First</option>
+        <option value="date">Date</option>
+      </select>
+    </div>
+  </section>
+
+  <!-- Jobs Grid -->
+  <section class="jobs-section">
+    <div id="jobs-grid" class="jobs-grid">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">📋</div>
+        <p>No jobs yet. Fill in the search form above and hit Search Jobs.</p>
+      </div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </section>
+</main>
+
+<!-- ══════════════════════════════════════════════
+     OUTREACH PAGE (Social Hiring Posts)
+════════════════════════════════════════════════ -->
+<main id="page-outreach" class="page hidden">
+  <section class="search-panel card">
+    <h2 class="section-title">Direct Outreach</h2>
+    <p class="section-sub">Find recruiters actively posting about openings on LinkedIn, Reddit, and Twitter. Send them a direct message.</p>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Country</label>
+        <select id="social-country">
+          <option value="IN">🇮🇳 India</option>
+          <option value="US">🇺🇸 United States</option>
+          <option value="GB">🇬🇧 United Kingdom</option>
+          <option value="CA">🇨🇦 Canada</option>
+          <option value="AU">🇦🇺 Australia</option>
+          <option value="SG">🇸🇬 Singapore</option>
+          <option value="AE">🇦🇪 UAE</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Role to Search</label>
+        <input type="text" id="social-role" placeholder="e.g. Data Analyst" />
+      </div>
+      <div class="form-group full-width sources-group">
+        <label>Platforms</label>
+        <div class="checkbox-row">
+          <label class="checkbox-label">
+            <input type="checkbox" value="linkedin_post" checked /> LinkedIn Posts
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" value="reddit" checked /> Reddit
+          </label>
+          <label class="checkbox-label">
+            <input type="checkbox" value="twitter" checked /> Twitter / X
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="search-actions">
+      <button type="button" class="btn btn-primary" id="social-search-btn">
+        <span class="btn-icon">📡</span> Find Posts
+      </button>
+    </div>
+    <div id="social-status" class="search-status hidden"></div>
+  </section>
+
+  <!-- Social Filter Bar -->
+  <section class="filter-bar">
+    <div class="filter-group">
+      <span class="filter-label">Platform:</span>
+      <div class="filter-tabs" id="social-source-tabs">
+        <button class="tab active" data-value="all">All</button>
+        <button class="tab" data-value="linkedin_post">LinkedIn</button>
+        <button class="tab" data-value="reddit">Reddit</button>
+        <button class="tab" data-value="twitter">Twitter</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Status:</span>
+      <div class="filter-tabs" id="social-status-tabs">
+        <button class="tab active" data-value="all">All</button>
+        <button class="tab" data-value="new">New</button>
+        <button class="tab" data-value="contacted">Contacted</button>
+        <button class="tab" data-value="dismissed">Dismissed</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="jobs-section">
+    <div id="social-grid" class="social-grid">
+      <div class="empty-state" id="social-empty">
+        <div class="empty-icon">📡</div>
+        <p>No posts yet. Search above to find recruiters actively hiring.</p>
+      </div>
+    </div>
+    <div class="pagination" id="social-pagination"></div>
+  </section>
+</main>
+
+<!-- ══════════════════════════════════════════════
+     TRACKER PAGE
+════════════════════════════════════════════════ -->
+<main id="page-tracker" class="page hidden">
+  <section class="tracker-header">
+    <h2 class="section-title">Application Tracker</h2>
+    <p class="section-sub">Drag jobs through your pipeline.</p>
+  </section>
+  <div class="kanban-board" id="kanban-board"></div>
+</main>
+
+<!-- ══════════════════════════════════════════════
+     FOLLOW-UPS PAGE
+════════════════════════════════════════════════ -->
+<main id="page-followup" class="page hidden">
+  <section class="tracker-header">
+    <h2 class="section-title">Follow-ups Due</h2>
+    <p class="section-sub">Recruiters who haven't replied yet. One click to send a follow-up.</p>
+  </section>
+  <div id="followup-list" class="followup-list"></div>
+</main>
+
+<!-- ══════════════════════════════════════════════
+     SETTINGS PAGE
+════════════════════════════════════════════════ -->
+<main id="page-settings" class="page hidden">
+
+  <!-- Resume Drop Zone -->
+  <section class="card resume-section" id="resume-section">
+    <h2 class="section-title">Resume</h2>
+    <p class="section-sub">Drop your PDF or DOCX resume — skills, experience, and notice period will be auto-filled below.</p>
+    <div class="resume-drop-zone" id="resume-drop-zone">
+      <div class="drop-icon">📄</div>
+      <p class="drop-hint">Drag &amp; drop your resume here<br/><span class="drop-sub">or click to browse</span></p>
+      <input type="file" id="resume-file-input" accept=".pdf,.docx,.doc" class="hidden" />
+    </div>
+    <div id="resume-parse-result" class="resume-parse-result hidden"></div>
+  </section>
+
+  <section class="settings-panel card">
+    <h2 class="section-title">Your Profile</h2>
+    <p class="section-sub">Used to calculate match scores and pre-fill cold emails.</p>
+    <form id="settings-form">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Full Name</label>
+          <input type="text" id="cfg-name" placeholder="Your Name" />
+        </div>
+        <div class="form-group">
+          <label>Experience (years)</label>
+          <input type="number" id="cfg-exp" placeholder="e.g. 4" min="0" max="40" step="0.5" />
+        </div>
+        <div class="form-group">
+          <label>Notice Period</label>
+          <input type="text" id="cfg-notice" placeholder="e.g. 30 days, immediate, 2 months" />
+        </div>
+        <div class="form-group full-width">
+          <label>Skills (comma-separated)</label>
+          <input type="text" id="cfg-skills" placeholder="SQL, Python, Tableau, Power BI, Excel, Statistics" />
+        </div>
+        <div class="form-group">
+          <label>Preferred Locations</label>
+          <input type="text" id="cfg-locations" placeholder="Mumbai, Remote, Bangalore" />
+        </div>
+        <div class="form-group">
+          <label>Target Salary (₹ per annum)</label>
+          <input type="number" id="cfg-salary" placeholder="e.g. 1000000" min="0" />
+        </div>
+        <div class="form-group full-width">
+          <label>Resume Summary (used in cold emails)</label>
+          <textarea id="cfg-resume" rows="4" placeholder="Brief summary of your background and key achievements..."></textarea>
+        </div>
+      </div>
+
+      <h2 class="section-title" style="margin-top:2rem">Email Settings</h2>
+      <p class="section-sub">
+        Requires a Gmail
+        <a href="https://support.google.com/accounts/answer/185833" target="_blank">App Password</a>
+        (not your regular password).
+      </p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Gmail Address</label>
+          <input type="email" id="cfg-gmail" placeholder="you@gmail.com" />
+        </div>
+        <div class="form-group">
+          <label>App Password</label>
+          <input type="password" id="cfg-password" placeholder="Leave blank to keep existing" />
+        </div>
+      </div>
+      <div class="settings-actions">
+        <button type="button" class="btn btn-secondary" id="test-email-btn">Test Connection</button>
+        <span id="email-test-result" class="test-result"></span>
+      </div>
+      <div class="settings-actions" style="margin-top:1.5rem">
+        <button type="submit" class="btn btn-primary">Save Settings</button>
+      </div>
+    </form>
+  </section>
+</main>
+
+<!-- ══════════════════════════════════════════════
+     JOB DETAIL MODAL
+════════════════════════════════════════════════ -->
+<div id="modal-overlay" class="modal-overlay hidden">
+  <div class="modal-box">
+    <button class="modal-close" id="modal-close-btn">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     EMAIL MODAL (cold email + follow-up + outreach)
+════════════════════════════════════════════════ -->
+<div id="email-modal-overlay" class="modal-overlay hidden">
+  <div class="modal-box modal-email">
+    <button class="modal-close" id="email-modal-close">✕</button>
+    <h3 class="modal-title" id="email-modal-title">Send Email</h3>
+    <div id="email-job-info" class="email-job-info"></div>
+    <form id="email-form">
+      <div class="form-group">
+        <label>To</label>
+        <input type="email" id="email-to" class="input-readonly" readonly />
+      </div>
+      <div class="form-group">
+        <label>Subject</label>
+        <input type="text" id="email-subject" required />
+      </div>
+      <div class="form-group">
+        <label>Body</label>
+        <textarea id="email-body" rows="12" required></textarea>
+      </div>
+      <div class="email-actions">
+        <button type="button" class="btn btn-ghost" id="email-cancel-btn">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="email-send-btn">
+          <span class="btn-icon">✉</span> Send
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script src="/static/js/app.js?v=3"></script>
+<script src="/static/js/jobs.js?v=3"></script>
+<script src="/static/js/tracker.js?v=3"></script>
+<script src="/static/js/followup.js?v=3"></script>
+<script src="/static/js/settings.js?v=3"></script>
+<script src="/static/js/email.js?v=3"></script>
+<script src="/static/js/locations.js?v=3"></script>
+<script src="/static/js/outreach.js?v=3"></script>
+<script src="/static/js/resume.js?v=3"></script>
+</body>
+</html>
