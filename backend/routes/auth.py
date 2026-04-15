@@ -61,7 +61,7 @@ def signup(req: SignupRequest):
     # Check if this is the very first user (fresh deployment bootstrap)
     from backend.database import get_connection
     conn = get_connection()
-    user_count = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+    user_count = conn.execute("SELECT COUNT(*) as cnt FROM users").fetchone()["cnt"]
     conn.close()
     is_first_user = user_count == 0
 
