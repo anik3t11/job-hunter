@@ -491,19 +491,23 @@
   <section class="settings-panel card" id="ai-keys-panel">
     <h2 class="section-title">✨ AI Keys <span class="label-hint">(optional — for unlimited cover letters &amp; resume tailoring)</span></h2>
     <p class="section-sub">
-      Each user gets <strong>5 free AI uses/day</strong> from the server. Add your own free key for unlimited access.
-      <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent)">Get free Gemini key ↗</a> ·
+      Each user gets <strong>5 free AI uses/day</strong> from the server. Add your own free key for unlimited access.<br/>
+      <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent)">Get free Gemini key ↗</a> &nbsp;·&nbsp;
       <a href="https://console.groq.com/keys" target="_blank" style="color:var(--accent)">Get free Groq key ↗</a>
     </p>
     <div class="form-grid" style="max-width:540px">
       <div class="form-group">
-        <label class="form-label">GEMINI API KEY <span class="label-hint">(1500 free req/day)</span></label>
+        <label class="form-label">GEMINI API KEY <span class="label-hint">(1,500 free req/day — recommended)</span></label>
         <input type="password" id="cfg-gemini-key" class="form-input" placeholder="AIza..." autocomplete="off" />
       </div>
       <div class="form-group">
-        <label class="form-label">GROQ API KEY <span class="label-hint">(14400 free req/day — Llama 3)</span></label>
+        <label class="form-label">GROQ API KEY <span class="label-hint">(14,400 free req/day — Llama 3)</span></label>
         <input type="password" id="cfg-groq-key" class="form-input" placeholder="gsk_..." autocomplete="off" />
       </div>
+    </div>
+    <div style="margin-top:1rem;display:flex;align-items:center;gap:1rem">
+      <button class="btn btn-primary" id="save-ai-keys-btn">Save AI Keys</button>
+      <span id="ai-keys-status" class="test-result"></span>
     </div>
   </section>
 

@@ -33,20 +33,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const pwd = document.getElementById('cfg-password').value;
     if (pwd) payload.gmail_app_password = pwd;
 
-    // AI keys — only send if user typed something
-    const geminiKey = document.getElementById('cfg-gemini-key').value.trim();
-    const groqKey   = document.getElementById('cfg-groq-key').value.trim();
-    if (geminiKey) payload.gemini_api_key = geminiKey;
-    if (groqKey)   payload.groq_api_key   = groqKey;
-
     try {
       await api('POST', '/api/settings', payload);
       showToast('Settings saved!', 'success');
-      document.getElementById('cfg-password').value  = '';
-      document.getElementById('cfg-gemini-key').value = '';
-      document.getElementById('cfg-groq-key').value   = '';
-      // Refresh AI credit badge with new key status
-      if (typeof refreshAiCredits === 'function') refreshAiCredits();
+      document.getElementById('cfg-password').value = '';
     } catch (err) {
       showToast(`Save failed: ${err.message}`, 'error');
     }
@@ -63,6 +53,42 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       el.textContent = `✗ ${err.message}`;
       el.className   = 'test-result err';
+    }
+  });
+
+  /* Save AI Keys */
+  document.getElementById('save-ai-keys-btn').addEventListener('click', async () => {
+    const geminiKey = document.getElementById('cfg-gemini-key').value.trim();
+    const groqKey   = document.getElementById('cfg-groq-key').value.trim();
+    const statusEl  = document.getElementById('ai-keys-status');
+
+    if (!geminiKey && !groqKey) {
+      statusEl.textContent = 'Enter at least one key.';
+      statusEl.className = 'test-result err';
+      return;
+    }
+
+    const btn = document.getElementById('save-ai-keys-btn');
+    btn.disabled = true; btn.textContent = 'Saving…';
+    statusEl.textContent = ''; statusEl.className = 'test-result';
+
+    try {
+      const payload = {};
+      if (geminiKey) payload.gemini_api_key = geminiKey;
+      if (groqKey)   payload.groq_api_key   = groqKey;
+      await api('POST', '/api/settings', payload);
+      statusEl.textContent = '✓ Keys saved!';
+      statusEl.className = 'test-result ok';
+      document.getElementById('cfg-gemini-key').value = '';
+      document.getElementById('cfg-groq-key').value   = '';
+      if (geminiKey) document.getElementById('cfg-gemini-key').placeholder = '••••••••••• (saved)';
+      if (groqKey)   document.getElementById('cfg-groq-key').placeholder   = '••••••••••• (saved)';
+      if (typeof refreshAiCredits === 'function') refreshAiCredits();
+    } catch (err) {
+      statusEl.textContent = `✗ ${err.message}`;
+      statusEl.className = 'test-result err';
+    } finally {
+      btn.disabled = false; btn.textContent = 'Save AI Keys';
     }
   });
 
