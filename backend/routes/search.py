@@ -5,24 +5,41 @@ from typing import Optional
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from backend.database import insert_jobs, get_settings, save_settings
-from backend.scrapers.linkedin  import LinkedInScraper
-from backend.scrapers.naukri    import NaukriScraper
-from backend.scrapers.wellfound import WellfoundScraper
-from backend.scrapers.indeed    import IndeedScraper
-from backend.scrapers.foundit   import FounditScraper
-from backend.services.matcher   import score_and_attach
+from backend.scrapers.linkedin     import LinkedInScraper
+from backend.scrapers.naukri       import NaukriScraper
+from backend.scrapers.wellfound    import WellfoundScraper
+from backend.scrapers.indeed       import IndeedScraper
+from backend.scrapers.foundit      import FounditScraper
+from backend.scrapers.jobspy_scraper import JobSpyScraper
+from backend.services.matcher      import score_and_attach
 from backend.services.role_expander import expand_role
 from backend.services.auth_service  import get_current_user
 
 router = APIRouter(prefix="/api/search", tags=["search"])
 
-SCRAPERS = {
-    "linkedin":  LinkedInScraper(),
+# ── Scraper registry ───────────────────────────────────────────────────────
+# Legacy scrapers (India-specific or fallback)
+_LEGACY = {
     "naukri":    NaukriScraper(),
     "wellfound": WellfoundScraper(),
-    "indeed":    IndeedScraper(),
     "foundit":   FounditScraper(),
 }
+
+# JobSpy-powered scrapers — each targets one site but shares the library
+_JOBSPY = {
+    "linkedin":   JobSpyScraper(sites=["linkedin"]),
+    "indeed":     JobSpyScraper(sites=["indeed"]),
+    "glassdoor":  JobSpyScraper(sites=["glassdoor"]),
+    "google_jobs":JobSpyScraper(sites=["google"]),
+}
+
+# LinkedIn legacy fallback (used if JobSpy fails for linkedin)
+_LINKEDIN_LEGACY = LinkedInScraper()
+
+SCRAPERS = {**_LEGACY, **_JOBSPY}
+
+# Default sources shown in the UI
+DEFAULT_SOURCES = ["linkedin", "indeed", "glassdoor", "naukri"]
 
 # Indian city/state keywords for geography enforcement
 INDIA_KEYWORDS = {
@@ -48,7 +65,7 @@ class SearchRequest(BaseModel):
     country:          str   = "IN"
     salary_target:    Optional[int]   = 0
     experience_years: Optional[float] = 0
-    sources:          list  = ["linkedin", "naukri", "indeed"]
+    sources:          list  = DEFAULT_SOURCES
 
 
 @router.post("")
@@ -74,12 +91,22 @@ def run_search(req: SearchRequest, user: dict = Depends(get_current_user)):
             salary_target=req.salary_target or 0,
             experience_years=req.experience_years or 0,
         )
+        # If JobSpy LinkedIn fails, try legacy LinkedIn scraper
+        if err and source == "linkedin" and not jobs:
+            jobs, err = _LINKEDIN_LEGACY.search(
+                role=variant, location=location_str,
+                locations=req.locations, country=req.country,
+                salary_target=req.salary_target or 0,
+                experience_years=req.experience_years or 0,
+            )
+            if not err:
+                err = None  # legacy succeeded — clear error
         for job in jobs:
             if variant.lower() != req.role.lower():
                 job["role_variant"] = variant
         return source, variant, jobs, err
 
-    with ThreadPoolExecutor(max_workers=5) as ex:
+    with ThreadPoolExecutor(max_workers=6) as ex:
         futures = {
             ex.submit(run_scraper, src, var): (src, var)
             for src in valid_sources
@@ -90,7 +117,7 @@ def run_search(req: SearchRequest, user: dict = Depends(get_current_user)):
             if err and not any(e["source"] == source for e in errors):
                 errors.append({"source": source, "message": err})
             for job in jobs:
-                # Geography enforcement
+                # Geography enforcement for India
                 if req.country == "IN" and not _is_india_job(job):
                     continue
                 url_hash = job.get("url_hash", "")
@@ -105,9 +132,9 @@ def run_search(req: SearchRequest, user: dict = Depends(get_current_user)):
         inserted, skipped = insert_jobs(all_jobs, uid)
 
     return {
-        "jobs_found":            len(all_jobs),
-        "jobs_new":              inserted,
-        "jobs_duplicate":        skipped,
+        "jobs_found":             len(all_jobs),
+        "jobs_new":               inserted,
+        "jobs_duplicate":         skipped,
         "role_variants_searched": role_variants,
-        "errors":                errors,
+        "errors":                 errors,
     }

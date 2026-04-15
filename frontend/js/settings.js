@@ -8,7 +8,10 @@ async function loadSettings() {
     document.getElementById('cfg-salary').value    = s.user_salary_target || s.user_salary_min || '';
     document.getElementById('cfg-notice').value    = s.notice_period || '';
     document.getElementById('cfg-resume').value    = s.resume_summary || '';
-    document.getElementById('cfg-gmail').value     = s.gmail_address || '';
+    document.getElementById('cfg-gmail').value       = s.gmail_address || '';
+    // Show masked key placeholder if key exists
+    if (s.gemini_api_key) document.getElementById('cfg-gemini-key').placeholder = '••••••••••• (saved)';
+    if (s.groq_api_key)   document.getElementById('cfg-groq-key').placeholder   = '••••••••••• (saved)';
   } catch (err) {
     showToast(`Could not load settings: ${err.message}`, 'error');
   }
@@ -30,10 +33,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const pwd = document.getElementById('cfg-password').value;
     if (pwd) payload.gmail_app_password = pwd;
 
+    // AI keys — only send if user typed something
+    const geminiKey = document.getElementById('cfg-gemini-key').value.trim();
+    const groqKey   = document.getElementById('cfg-groq-key').value.trim();
+    if (geminiKey) payload.gemini_api_key = geminiKey;
+    if (groqKey)   payload.groq_api_key   = groqKey;
+
     try {
       await api('POST', '/api/settings', payload);
       showToast('Settings saved!', 'success');
-      document.getElementById('cfg-password').value = '';
+      document.getElementById('cfg-password').value  = '';
+      document.getElementById('cfg-gemini-key').value = '';
+      document.getElementById('cfg-groq-key').value   = '';
+      // Refresh AI credit badge with new key status
+      if (typeof refreshAiCredits === 'function') refreshAiCredits();
     } catch (err) {
       showToast(`Save failed: ${err.message}`, 'error');
     }

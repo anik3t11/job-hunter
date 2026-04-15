@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Job Hunter</title>
-  <link rel="stylesheet" href="/static/css/styles.css?v=5" />
+  <link rel="stylesheet" href="/static/css/styles.css?v=6" />
 </head>
 <body>
 
@@ -84,6 +84,7 @@
   </div>
   <div class="navbar-right">
     <div class="navbar-stats" id="navbar-stats"></div>
+    <span id="ai-credits-badge" class="ai-credits-badge" title="AI credits remaining today"></span>
     <button class="btn btn-sm btn-ghost" onclick="window.location='/api/jobs/export/csv'" title="Export CSV">↓ CSV</button>
     <div class="user-chip" id="user-chip">
       <span class="user-avatar" id="user-avatar">?</span>
@@ -486,6 +487,26 @@
     </form>
   </section>
 
+  <!-- AI API Keys — optional, for unlimited AI use -->
+  <section class="settings-panel card" id="ai-keys-panel">
+    <h2 class="section-title">✨ AI Keys <span class="label-hint">(optional — for unlimited cover letters &amp; resume tailoring)</span></h2>
+    <p class="section-sub">
+      Each user gets <strong>5 free AI uses/day</strong> from the server. Add your own free key for unlimited access.
+      <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent)">Get free Gemini key ↗</a> ·
+      <a href="https://console.groq.com/keys" target="_blank" style="color:var(--accent)">Get free Groq key ↗</a>
+    </p>
+    <div class="form-grid" style="max-width:540px">
+      <div class="form-group">
+        <label class="form-label">GEMINI API KEY <span class="label-hint">(1500 free req/day)</span></label>
+        <input type="password" id="cfg-gemini-key" class="form-input" placeholder="AIza..." autocomplete="off" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">GROQ API KEY <span class="label-hint">(14400 free req/day — Llama 3)</span></label>
+        <input type="password" id="cfg-groq-key" class="form-input" placeholder="gsk_..." autocomplete="off" />
+      </div>
+    </div>
+  </section>
+
   <!-- Change Password — shown to all logged-in users -->
   <section class="settings-panel card" id="change-password-panel">
     <h2 class="section-title">Change Password</h2>
@@ -595,16 +616,17 @@
 <!-- ══════════════════════════════════════════════
      SCRIPTS
 ════════════════════════════════════════════════ -->
-<script src="/static/js/app.js?v=5"></script>
-<script src="/static/js/auth.js?v=5"></script>
-<script src="/static/js/jobs.js?v=5"></script>
-<script src="/static/js/tracker.js?v=5"></script>
-<script src="/static/js/followup.js?v=5"></script>
-<script src="/static/js/settings.js?v=5"></script>
-<script src="/static/js/email.js?v=5"></script>
-<script src="/static/js/locations.js?v=5"></script>
-<script src="/static/js/outreach.js?v=5"></script>
-<script src="/static/js/resume.js?v=5"></script>
-<script src="/static/js/analytics.js?v=5"></script>
+<script src="/static/js/app.js?v=6"></script>
+<script src="/static/js/auth.js?v=6"></script>
+<script src="/static/js/jobs.js?v=6"></script>
+<script src="/static/js/tracker.js?v=6"></script>
+<script src="/static/js/followup.js?v=6"></script>
+<script src="/static/js/settings.js?v=6"></script>
+<script src="/static/js/email.js?v=6"></script>
+<script src="/static/js/locations.js?v=6"></script>
+<script src="/static/js/outreach.js?v=6"></script>
+<script src="/static/js/resume.js?v=6"></script>
+<script src="/static/js/analytics.js?v=6"></script>
+<script src="/static/js/ai.js?v=6"></script>
 </body>
 </html>

@@ -27,21 +27,33 @@ const CITIES = {
 /* Sources available per country */
 const COUNTRY_SOURCES = {
   IN: [
-    { id: "linkedin",  label: "LinkedIn",  checked: true  },
-    { id: "naukri",    label: "Naukri",    checked: true  },
-    { id: "indeed",    label: "Indeed",    checked: true  },
-    { id: "foundit",   label: "Foundit",   checked: true  },
-    { id: "wellfound", label: "Wellfound", checked: false },
+    { id: "linkedin",   label: "🔵 LinkedIn",   checked: true  },
+    { id: "indeed",     label: "🔴 Indeed",     checked: true  },
+    { id: "glassdoor",  label: "🟢 Glassdoor",  checked: true  },
+    { id: "naukri",     label: "🟡 Naukri",     checked: true  },
+    { id: "foundit",    label: "🟠 Foundit",    checked: false },
+    { id: "google_jobs",label: "🔍 Google Jobs",checked: false },
+    { id: "wellfound",  label: "✨ Wellfound",  checked: false },
   ],
   US: [
-    { id: "linkedin",  label: "LinkedIn",  checked: true  },
-    { id: "indeed",    label: "Indeed",    checked: true  },
-    { id: "wellfound", label: "Wellfound", checked: false },
+    { id: "linkedin",   label: "🔵 LinkedIn",   checked: true  },
+    { id: "indeed",     label: "🔴 Indeed",     checked: true  },
+    { id: "glassdoor",  label: "🟢 Glassdoor",  checked: true  },
+    { id: "google_jobs",label: "🔍 Google Jobs",checked: false },
+    { id: "wellfound",  label: "✨ Wellfound",  checked: false },
+  ],
+  GB: [
+    { id: "linkedin",   label: "🔵 LinkedIn",   checked: true  },
+    { id: "indeed",     label: "🔴 Indeed",     checked: true  },
+    { id: "glassdoor",  label: "🟢 Glassdoor",  checked: true  },
+    { id: "google_jobs",label: "🔍 Google Jobs",checked: false },
   ],
   DEFAULT: [
-    { id: "linkedin",  label: "LinkedIn",  checked: true  },
-    { id: "indeed",    label: "Indeed",    checked: true  },
-    { id: "wellfound", label: "Wellfound", checked: false },
+    { id: "linkedin",   label: "🔵 LinkedIn",   checked: true  },
+    { id: "indeed",     label: "🔴 Indeed",     checked: true  },
+    { id: "glassdoor",  label: "🟢 Glassdoor",  checked: true  },
+    { id: "google_jobs",label: "🔍 Google Jobs",checked: false },
+    { id: "wellfound",  label: "✨ Wellfound",  checked: false },
   ],
 };
 

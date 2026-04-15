@@ -18,8 +18,9 @@ from backend.routes.social        import router as social_router
 from backend.routes.analytics     import router as analytics_router
 from backend.routes.company       import router as company_router
 from backend.routes.recruiter     import router as recruiter_router
+from backend.routes.ai            import router as ai_router
 
-app = FastAPI(title="Job Hunter", version="4.0.0")
+app = FastAPI(title="Job Hunter", version="5.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,7 +31,7 @@ app.add_middleware(
 
 for r in [auth_router, jobs_router, search_router, email_router,
           settings_router, followup_router, resume_router, social_router,
-          analytics_router, company_router, recruiter_router]:
+          analytics_router, company_router, recruiter_router, ai_router]:
     app.include_router(r)
 
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"

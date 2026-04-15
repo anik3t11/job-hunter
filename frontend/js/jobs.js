@@ -47,6 +47,8 @@ function renderJobs(jobs) {
     b.addEventListener('click', () => openRecruiterFinder(b.dataset.company)));
   grid.querySelectorAll('.insights-btn').forEach(b =>
     b.addEventListener('click', () => openCompanyInsights(b.dataset.company, b.dataset.role)));
+  grid.querySelectorAll('.ai-cover-btn').forEach(b =>
+    b.addEventListener('click', () => openAiModal(+b.dataset.id, 'cover')));
   grid.querySelectorAll('.status-select').forEach(sel =>
     sel.addEventListener('change', async () => {
       await updateJobStatus(+sel.dataset.id, sel.value);
@@ -112,6 +114,7 @@ function jobCard(job) {
             data-id="${job.id}" data-url="${escAttr(job.job_url)}" data-status="${job.status}">Apply ↗</button>
           ${emailBtn}
           ${insightsBtn}
+          <button class="btn btn-sm btn-ai ai-cover-btn" data-id="${job.id}" title="AI: Generate cover letter">✨ Cover Letter</button>
         </div>
       </div>
     </div>`;
@@ -160,6 +163,8 @@ async function openJobDetail(jobId) {
       <div class="detail-actions">
         <a href="${escAttr(job.job_url)}" target="_blank" class="btn btn-primary">Apply ↗</a>
         ${emailBtn}${recruiterBtn}${insightsBtn}
+        <button class="btn btn-ai" onclick="openAiModal(${job.id},'cover')">✨ Cover Letter</button>
+        <button class="btn btn-ghost" onclick="openAiModal(${job.id},'tailor')">📝 Tailor Resume</button>
         <select class="status-select status-${job.status}"
           onchange="updateJobStatus(${job.id},this.value);this.className='status-select status-'+this.value">
           ${statusOptions(job.status)}

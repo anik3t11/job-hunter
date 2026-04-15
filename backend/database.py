@@ -432,6 +432,7 @@ def _seed_user_settings(conn: _Conn, user_id: int):
         ("resume_summary", ""), ("resume_text", ""),
         ("last_search_role", ""), ("last_search_country", "IN"),
         ("last_search_locations", ""),
+        ("gemini_api_key", ""), ("groq_api_key", ""),
     ]
     for key, val in defaults:
         conn.execute(
