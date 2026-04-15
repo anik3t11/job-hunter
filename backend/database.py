@@ -187,6 +187,7 @@ def init_db():
                 skills_stretch      TEXT,
                 is_hot              INTEGER DEFAULT 0,
                 is_stretch          INTEGER DEFAULT 0,
+                location_match      INTEGER DEFAULT 0,
                 role_variant        TEXT,
                 notes               TEXT,
                 applied_at          TEXT,
@@ -287,6 +288,7 @@ def init_db():
                 skills_stretch      TEXT,
                 is_hot              INTEGER DEFAULT 0,
                 is_stretch          INTEGER DEFAULT 0,
+                location_match      INTEGER DEFAULT 0,
                 role_variant        TEXT,
                 notes               TEXT,
                 applied_at          TEXT,
@@ -478,8 +480,8 @@ def insert_jobs(jobs: list, user_id: int) -> tuple:
                     salary_target, experience_required, description, description_snippet,
                     skills_required, job_url, url_hash, source, country,
                     recruiter_name, recruiter_email, match_score, match_breakdown,
-                    skills_gap, skills_stretch, is_hot, is_stretch, role_variant, scraped_at)
-                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+                    skills_gap, skills_stretch, is_hot, is_stretch, location_match, role_variant, scraped_at)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (
                     user_id,
                     job.get("title", ""),
@@ -505,6 +507,7 @@ def insert_jobs(jobs: list, user_id: int) -> tuple:
                     job.get("skills_stretch", ""),
                     job.get("is_hot", 0),
                     job.get("is_stretch", 0),
+                    job.get("location_match", 0),
                     job.get("role_variant", ""),
                     job.get("scraped_at", _now()),
                 ),
@@ -542,10 +545,10 @@ def get_jobs(user_id: int, status=None, source=None, country=None,
 
     where = "WHERE " + " AND ".join(conditions)
     order = {
-        "score": "match_score DESC, scraped_at DESC",
-        "hot":   "is_hot DESC, scraped_at DESC",
+        "score": "location_match DESC, match_score DESC, scraped_at DESC",
+        "hot":   "is_hot DESC, location_match DESC, scraped_at DESC",
         "date":  "scraped_at DESC",
-    }.get(sort, "match_score DESC")
+    }.get(sort, "location_match DESC, match_score DESC")
 
     total = conn.execute("SELECT COUNT(*) as cnt FROM jobs {}".format(where), params).fetchone()["cnt"]
     offset = (page - 1) * per_page

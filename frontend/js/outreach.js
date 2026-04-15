@@ -10,6 +10,7 @@ const PLATFORM_LABELS = {
   linkedin_post: { icon: '💼', label: 'LinkedIn' },
   reddit:        { icon: '🤖', label: 'Reddit' },
   twitter:       { icon: '🐦', label: 'Twitter' },
+  hn_hiring:     { icon: '🟠', label: 'HN Hiring' },
 };
 
 function platformBadge(source) {

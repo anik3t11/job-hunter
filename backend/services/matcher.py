@@ -183,6 +183,7 @@ def score_and_attach(job: dict, settings: dict) -> dict:
     job["match_breakdown"] = json.dumps(breakdown)
     job["is_hot"] = 1 if is_hot(job.get("scraped_at", "")) else 0
     job["is_stretch"] = 1 if is_stretch else 0
+    job["location_match"] = 1 if breakdown.get("location", 0) >= 25 else 0
 
     # Fuzzy gap: exact missing skills + transferable stretch skills
     user_skills = settings.get("user_skills", "")

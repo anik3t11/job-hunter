@@ -11,6 +11,7 @@ import time
 import requests
 from datetime import datetime, timezone, timedelta
 from urllib.parse import unquote
+from .hn_hiring import scrape_hn_hiring
 
 HEADERS = {
     "User-Agent": (
@@ -321,7 +322,7 @@ def scrape_nitter(role: str, country: str = "IN", max_results: int = 15) -> list
 
 def scrape_social(role: str, country: str = "IN", sources: list = None) -> list:
     if sources is None:
-        sources = ["linkedin_post", "reddit", "twitter"]
+        sources = ["linkedin_post", "reddit", "hn_hiring"]
 
     all_posts, seen = [], set()
 
@@ -337,8 +338,11 @@ def scrape_social(role: str, country: str = "IN", sources: list = None) -> list:
                 seen.add(p["post_url"])
                 all_posts.append(p)
 
-    if "twitter" in sources:
-        for p in scrape_nitter(role, country):
+    # Twitter/Nitter is dead — no-op
+    # if "twitter" in sources: ...
+
+    if "hn_hiring" in sources:
+        for p in scrape_hn_hiring(role, country):
             if p["post_url"] not in seen:
                 seen.add(p["post_url"])
                 all_posts.append(p)

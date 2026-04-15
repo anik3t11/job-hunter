@@ -13,7 +13,7 @@ router = APIRouter(prefix="/api/social", tags=["social"])
 class SocialSearchRequest(BaseModel):
     role:    str
     country: str  = "IN"
-    sources: list = ["linkedin_post", "reddit", "twitter"]
+    sources: list = ["linkedin_post", "reddit", "hn_hiring"]
 
 
 class PostUpdate(BaseModel):

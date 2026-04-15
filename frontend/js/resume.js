@@ -83,11 +83,13 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="parse-actions">
           <button class="btn btn-primary" id="apply-resume-btn">Apply to Profile →</button>
+          <button class="btn btn-secondary" id="find-resume-jobs-btn">🔍 Find Matching Jobs</button>
           <span class="parse-hint">Pre-fills your Name, Skills, Experience &amp; Notice Period in Settings.</span>
         </div>
       </div>`;
     resultEl.classList.remove('hidden');
     document.getElementById('apply-resume-btn').addEventListener('click', () => applyProfile(profile));
+    document.getElementById('find-resume-jobs-btn').addEventListener('click', () => findJobsFromResume(profile));
 
     // Score section
     if (scoreData) renderScoreSection(scoreData);
@@ -171,6 +173,21 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       showToast(`Could not save profile: ${err.message}`, 'error');
     }
+  }
+
+  async function findJobsFromResume(profile) {
+    // First apply the profile
+    await applyProfile(profile);
+    // Navigate to jobs tab
+    location.hash = 'jobs';
+    await new Promise(r => setTimeout(r, 200));
+    // Pre-fill the search role with top job title from resume
+    const role = profile.job_titles?.[0] || profile.target_role || '';
+    if (role) {
+      const roleInput = document.getElementById('search-role');
+      if (roleInput) roleInput.value = role;
+    }
+    showToast('Profile applied! Set your location and click Search.', 'success');
   }
 
   function resetDropZone() {
