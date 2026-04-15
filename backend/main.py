@@ -62,10 +62,11 @@ def health():
             "module_use_pg": module_use_pg,
             "module_db_url_set": bool(module_db_url),
             "db_related_vars": db_vars,
+            "all_var_names": sorted(os.environ.keys()),
         }
     except Exception as e:
         return {"status": "error", "error": str(e), "trace": traceback.format_exc(),
-                "db_related_vars": db_vars}
+                "db_related_vars": db_vars, "all_var_names": sorted(os.environ.keys())}
 
 
 @app.get("/")
