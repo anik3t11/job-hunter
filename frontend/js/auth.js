@@ -14,6 +14,7 @@ function showApp(user) {
   if (user.is_admin) {
     document.getElementById('admin-panel').classList.remove('hidden');
     loadWhitelist();
+    loadAdminUsers();
   } else {
     document.getElementById('admin-panel').classList.add('hidden');
   }
@@ -122,6 +123,41 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 /* ── Admin whitelist management ── */
+async function loadAdminUsers() {
+  try {
+    const data = await api('GET', '/api/auth/admin/users');
+    const tbody = document.getElementById('admin-users-body');
+    if (!data.users || !data.users.length) {
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--muted)">No users yet.</td></tr>`;
+      return;
+    }
+    tbody.innerHTML = data.users.map(u => `
+      <tr>
+        <td>${escHtml(u.name || '—')}</td>
+        <td>${escHtml(u.email)}</td>
+        <td><span class="status-badge ${u.is_admin ? 'status-used' : 'status-pending'}">${u.is_admin ? 'Admin' : 'User'}</span></td>
+        <td>${u.created_at ? new Date(u.created_at).toLocaleDateString() : '—'}</td>
+        <td>
+          <button class="btn btn-sm btn-ghost" onclick="adminResetPassword(${u.id}, '${escAttr(u.email)}')">Reset Password</button>
+        </td>
+      </tr>`).join('');
+  } catch (err) {
+    showToast(`Could not load users: ${err.message}`, 'error');
+  }
+}
+
+async function adminResetPassword(userId, email) {
+  const newPwd = prompt(`Set new password for ${email}:\n(minimum 6 characters)`);
+  if (!newPwd) return;
+  if (newPwd.length < 6) { showToast('Password must be at least 6 characters', 'error'); return; }
+  try {
+    await api('POST', `/api/auth/admin/reset-password/${userId}`, { new_password: newPwd });
+    showToast(`Password reset for ${email}`, 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
 async function loadWhitelist() {
   try {
     const data = await api('GET', '/api/auth/admin/whitelist');

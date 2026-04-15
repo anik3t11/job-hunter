@@ -37,6 +37,15 @@ class WhitelistAdd(BaseModel):
     email: str
 
 
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password:     str
+
+
+class AdminResetPasswordRequest(BaseModel):
+    new_password: str
+
+
 # ── Public routes ─────────────────────────────────────────────────────────
 
 @router.post("/signup")
@@ -113,7 +122,37 @@ def me(user: dict = Depends(get_current_user)):
     }
 
 
+# ── Authenticated user — change own password ─────────────────────────────
+
+@router.post("/change-password")
+def change_password(req: ChangePasswordRequest, user: dict = Depends(get_current_user)):
+    if len(req.new_password) < 6:
+        raise HTTPException(400, "New password must be at least 6 characters")
+    u = get_user_by_id(user["user_id"])
+    if not u:
+        raise HTTPException(404, "User not found")
+    if not verify_password(req.current_password, u["password_hash"]):
+        raise HTTPException(401, "Current password is incorrect")
+    from backend.database import get_connection
+    conn = get_connection()
+    conn.execute("UPDATE users SET password_hash=? WHERE id=?",
+                 (hash_password(req.new_password), user["user_id"]))
+    conn.commit()
+    conn.close()
+    return {"ok": True}
+
+
 # ── Admin — whitelist management ──────────────────────────────────────────
+
+@router.get("/admin/users")
+def admin_list_users(admin: dict = Depends(get_admin_user)):
+    """List all registered users."""
+    from backend.database import get_connection
+    conn = get_connection()
+    rows = conn.execute("SELECT id, email, name, is_admin, is_active, created_at FROM users ORDER BY id").fetchall()
+    conn.close()
+    return {"users": [dict(r) for r in rows]}
+
 
 @router.get("/admin/whitelist")
 def admin_list_whitelist(admin: dict = Depends(get_admin_user)):
@@ -132,6 +171,24 @@ def admin_add_whitelist(body: WhitelistAdd, admin: dict = Depends(get_admin_user
 @router.delete("/admin/whitelist/{email}")
 def admin_remove_whitelist(email: str, admin: dict = Depends(get_admin_user)):
     remove_from_whitelist(email)
+    return {"ok": True}
+
+
+@router.post("/admin/reset-password/{user_id}")
+def admin_reset_password(user_id: int, body: AdminResetPasswordRequest, admin: dict = Depends(get_admin_user)):
+    """Admin resets any user's password."""
+    if len(body.new_password) < 6:
+        raise HTTPException(400, "Password must be at least 6 characters")
+    from backend.database import get_connection
+    conn = get_connection()
+    row = conn.execute("SELECT id FROM users WHERE id=?", (user_id,)).fetchone()
+    if not row:
+        conn.close()
+        raise HTTPException(404, "User not found")
+    conn.execute("UPDATE users SET password_hash=? WHERE id=?",
+                 (hash_password(body.new_password), user_id))
+    conn.commit()
+    conn.close()
     return {"ok": True}
 
 

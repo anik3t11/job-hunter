@@ -52,4 +52,36 @@ document.addEventListener('DOMContentLoaded', () => {
       el.className   = 'test-result err';
     }
   });
+
+  /* Change Password */
+  document.getElementById('change-pwd-btn').addEventListener('click', async () => {
+    const current = document.getElementById('pwd-current').value;
+    const newPwd  = document.getElementById('pwd-new').value;
+    const confirm = document.getElementById('pwd-confirm').value;
+    const errEl   = document.getElementById('pwd-error');
+    errEl.classList.add('hidden');
+
+    if (!current || !newPwd || !confirm) {
+      errEl.textContent = 'All fields are required.'; errEl.classList.remove('hidden'); return;
+    }
+    if (newPwd.length < 6) {
+      errEl.textContent = 'New password must be at least 6 characters.'; errEl.classList.remove('hidden'); return;
+    }
+    if (newPwd !== confirm) {
+      errEl.textContent = 'New passwords do not match.'; errEl.classList.remove('hidden'); return;
+    }
+    const btn = document.getElementById('change-pwd-btn');
+    btn.disabled = true; btn.textContent = 'Updating…';
+    try {
+      await api('POST', '/api/auth/change-password', { current_password: current, new_password: newPwd });
+      showToast('Password updated successfully!', 'success');
+      document.getElementById('pwd-current').value = '';
+      document.getElementById('pwd-new').value = '';
+      document.getElementById('pwd-confirm').value = '';
+    } catch (err) {
+      errEl.textContent = err.message; errEl.classList.remove('hidden');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Update Password';
+    }
+  });
 });

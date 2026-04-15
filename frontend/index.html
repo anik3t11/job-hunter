@@ -484,6 +484,30 @@
     </form>
   </section>
 
+  <!-- Change Password — shown to all logged-in users -->
+  <section class="settings-panel card" id="change-password-panel">
+    <h2 class="section-title">Change Password</h2>
+    <p class="section-sub">Update your login password.</p>
+    <div class="form-grid" style="max-width:420px">
+      <div class="form-group">
+        <label class="form-label">CURRENT PASSWORD</label>
+        <input type="password" id="pwd-current" class="form-input" placeholder="Your current password" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">NEW PASSWORD</label>
+        <input type="password" id="pwd-new" class="form-input" placeholder="At least 6 characters" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">CONFIRM NEW PASSWORD</label>
+        <input type="password" id="pwd-confirm" class="form-input" placeholder="Repeat new password" />
+      </div>
+    </div>
+    <div id="pwd-error" class="auth-error hidden" style="margin-top:.5rem"></div>
+    <div style="margin-top:1rem">
+      <button class="btn btn-primary" id="change-pwd-btn">Update Password</button>
+    </div>
+  </section>
+
   <!-- Admin Panel — only shown to admin users -->
   <section class="settings-panel card admin-panel hidden" id="admin-panel">
     <h2 class="section-title">Admin — Invite Whitelist</h2>
@@ -503,6 +527,21 @@
         </tr>
       </thead>
       <tbody id="admin-whitelist-body"></tbody>
+    </table>
+
+    <h3 class="section-title" style="margin-top:2rem">Registered Users</h3>
+    <p class="section-sub">Reset password for any user.</p>
+    <table class="admin-table" id="admin-users-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Joined</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="admin-users-body"></tbody>
     </table>
   </section>
 
