@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "job-hunter",
-      "runtimeExecutable": "/Users/Aniket/Desktop/Experiments/job-hunter/.venv/bin/python3",
-      "runtimeArgs": ["-m", "uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"],
+      "runtimeExecutable": "/Users/Aniket/Desktop/Experiments/job-hunter/.venv/bin/uvicorn",
+      "runtimeArgs": ["backend.main:app", "--host", "0.0.0.0", "--port", "8000"],
       "port": 8000
     }
   ]

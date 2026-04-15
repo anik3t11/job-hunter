@@ -47,6 +47,8 @@ function renderJobs(jobs) {
     b.addEventListener('click', () => openRecruiterFinder(b.dataset.company)));
   grid.querySelectorAll('.insights-btn').forEach(b =>
     b.addEventListener('click', () => openCompanyInsights(b.dataset.company, b.dataset.role)));
+  grid.querySelectorAll('.ats-btn').forEach(b =>
+    b.addEventListener('click', () => openAtsModal(+b.dataset.id)));
   grid.querySelectorAll('.ai-cover-btn').forEach(b =>
     b.addEventListener('click', () => openAiModal(+b.dataset.id, 'cover')));
   grid.querySelectorAll('.status-select').forEach(sel =>
@@ -114,6 +116,7 @@ function jobCard(job) {
             data-id="${job.id}" data-url="${escAttr(job.job_url)}" data-status="${job.status}">Apply ↗</button>
           ${emailBtn}
           ${insightsBtn}
+          <button class="btn btn-sm btn-ghost ats-btn" data-id="${job.id}" title="Match resume to this job">📊 ATS</button>
           <button class="btn btn-sm btn-ai ai-cover-btn" data-id="${job.id}" title="AI: Generate cover letter">✨ Cover Letter</button>
         </div>
       </div>

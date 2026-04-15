@@ -462,6 +462,33 @@
         </div>
       </div>
 
+      <h3 class="section-title" style="margin-top:2rem">Job Alerts</h3>
+      <p class="section-sub">Get an email digest of new matching jobs. Requires Gmail configured below.</p>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Alert Emails</label>
+          <select id="cfg-alert-enabled">
+            <option value="1">Enabled</option>
+            <option value="0">Disabled</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Frequency</label>
+          <select id="cfg-alert-frequency">
+            <option value="daily">Daily (8am IST)</option>
+            <option value="weekly">Weekly (Mon 8am IST)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Min Match Score</label>
+          <input type="number" id="cfg-alert-score" placeholder="50" min="0" max="100" />
+        </div>
+      </div>
+      <div class="settings-actions">
+        <button type="button" class="btn btn-secondary" id="test-digest-btn">Send Test Digest Now</button>
+        <span id="digest-test-result" class="test-result"></span>
+      </div>
+
       <h3 class="section-title" style="margin-top:2rem">Email Settings</h3>
       <p class="section-sub">
         Requires a Gmail <a href="https://support.google.com/accounts/answer/185833" target="_blank">App Password</a>
@@ -509,6 +536,15 @@
       <button class="btn btn-primary" id="save-ai-keys-btn">Save AI Keys</button>
       <span id="ai-keys-status" class="test-result"></span>
     </div>
+  </section>
+
+  <!-- Bookmarklet -->
+  <section class="settings-panel card">
+    <h2 class="section-title">🔖 Browser Bookmarklet</h2>
+    <p class="section-sub">Save any job from LinkedIn, Naukri, Indeed, Glassdoor — or any job board — in one click.</p>
+    <p style="font-size:.85rem;color:var(--muted);margin-bottom:.75rem">Drag this button to your bookmarks bar, then click it on any job page:</p>
+    <div id="bookmarklet-link-container" style="margin-bottom:1rem"></div>
+    <p style="font-size:.78rem;color:var(--muted)">The job will appear in your tracker with your match score automatically calculated.</p>
   </section>
 
   <!-- Change Password — shown to all logged-in users -->
@@ -632,5 +668,6 @@
 <script src="/static/js/resume.js?v=6"></script>
 <script src="/static/js/analytics.js?v=6"></script>
 <script src="/static/js/ai.js?v=6"></script>
+<script src="/static/js/ats.js?v=6"></script>
 </body>
 </html>

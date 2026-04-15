@@ -19,6 +19,9 @@ from backend.routes.analytics     import router as analytics_router
 from backend.routes.company       import router as company_router
 from backend.routes.recruiter     import router as recruiter_router
 from backend.routes.ai            import router as ai_router
+from backend.routes.digest        import router as digest_router
+from backend.routes.ats           import router as ats_router
+from backend.routes.bookmarklet   import router as bookmarklet_router
 
 app = FastAPI(title="Job Hunter", version="5.0.0")
 
@@ -31,7 +34,8 @@ app.add_middleware(
 
 for r in [auth_router, jobs_router, search_router, email_router,
           settings_router, followup_router, resume_router, social_router,
-          analytics_router, company_router, recruiter_router, ai_router]:
+          analytics_router, company_router, recruiter_router, ai_router,
+          digest_router, ats_router, bookmarklet_router]:
     app.include_router(r)
 
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
@@ -78,3 +82,16 @@ def serve_frontend():
 @app.on_event("startup")
 def on_startup():
     init_db()
+    # Start daily digest scheduler
+    try:
+        from apscheduler.schedulers.background import BackgroundScheduler
+        from backend.services.digest import send_all_digests
+        scheduler = BackgroundScheduler(timezone="UTC")
+        scheduler.add_job(send_all_digests, "cron", hour=2, minute=30)  # 2:30 UTC = 8am IST
+        scheduler.start()
+        app.state.scheduler = scheduler
+    except ImportError:
+        pass  # apscheduler not installed — digest runs manually only
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Scheduler not started: {e}")

@@ -433,6 +433,7 @@ def _seed_user_settings(conn: _Conn, user_id: int):
         ("last_search_role", ""), ("last_search_country", "IN"),
         ("last_search_locations", ""),
         ("gemini_api_key", ""), ("groq_api_key", ""),
+        ("alert_enabled", "1"), ("alert_frequency", "daily"), ("alert_min_score", "50"),
     ]
     for key, val in defaults:
         conn.execute(

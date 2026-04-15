@@ -8,10 +8,15 @@ async function loadSettings() {
     document.getElementById('cfg-salary').value    = s.user_salary_target || s.user_salary_min || '';
     document.getElementById('cfg-notice').value    = s.notice_period || '';
     document.getElementById('cfg-resume').value    = s.resume_summary || '';
-    document.getElementById('cfg-gmail').value       = s.gmail_address || '';
+    document.getElementById('cfg-gmail').value           = s.gmail_address || '';
+    document.getElementById('cfg-alert-enabled').value   = s.alert_enabled  ?? '1';
+    document.getElementById('cfg-alert-frequency').value = s.alert_frequency || 'daily';
+    document.getElementById('cfg-alert-score').value     = s.alert_min_score || '50';
     // Show masked key placeholder if key exists
     if (s.gemini_api_key) document.getElementById('cfg-gemini-key').placeholder = '••••••••••• (saved)';
     if (s.groq_api_key)   document.getElementById('cfg-groq-key').placeholder   = '••••••••••• (saved)';
+    // Generate bookmarklet
+    _renderBookmarklet();
   } catch (err) {
     showToast(`Could not load settings: ${err.message}`, 'error');
   }
@@ -29,6 +34,9 @@ document.addEventListener('DOMContentLoaded', () => {
       user_salary_target:       document.getElementById('cfg-salary').value,
       resume_summary:           document.getElementById('cfg-resume').value.trim(),
       gmail_address:            document.getElementById('cfg-gmail').value.trim(),
+      alert_enabled:            document.getElementById('cfg-alert-enabled').value,
+      alert_frequency:          document.getElementById('cfg-alert-frequency').value,
+      alert_min_score:          document.getElementById('cfg-alert-score').value,
     };
     const pwd = document.getElementById('cfg-password').value;
     if (pwd) payload.gmail_app_password = pwd;
@@ -53,6 +61,28 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       el.textContent = `✗ ${err.message}`;
       el.className   = 'test-result err';
+    }
+  });
+
+  /* Test Digest */
+  document.getElementById('test-digest-btn').addEventListener('click', async () => {
+    const el  = document.getElementById('digest-test-result');
+    const btn = document.getElementById('test-digest-btn');
+    el.textContent = 'Sending…'; el.className = 'test-result';
+    btn.disabled = true;
+    try {
+      const r = await api('POST', '/api/digest/send-now');
+      if (r.sent) {
+        el.textContent = `✓ Sent! ${r.jobs_count} job${r.jobs_count !== 1 ? 's' : ''} in digest.`;
+        el.className = 'test-result ok';
+      } else {
+        el.textContent = `ℹ ${r.reason || r.message || 'No new jobs to send.'}`;
+        el.className = 'test-result';
+      }
+    } catch (err) {
+      el.textContent = `✗ ${err.message}`; el.className = 'test-result err';
+    } finally {
+      btn.disabled = false;
     }
   });
 
@@ -124,3 +154,22 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+function _renderBookmarklet() {
+  const container = document.getElementById('bookmarklet-link-container');
+  if (!container) return;
+  const token     = localStorage.getItem('jh_token') || '';
+  const serverUrl = location.origin;
+  // Build bookmarklet JS (minified inline)
+  const bmJs = `javascript:(function(){` +
+    `var t='${token.replace(/'/g,"\\'")}';` +
+    `var title=(document.querySelector('h1')?.innerText||document.title).trim().slice(0,200);` +
+    `var url=location.href;` +
+    `var co=(document.querySelector('[data-company-name],[class*="companyName"],[class*="company-name"],[class*="employer"]')?.innerText||'').trim().slice(0,100);` +
+    `var loc=(document.querySelector('[data-location],[class*="location"],[class*="jobLocation"]')?.innerText||'').trim().slice(0,100);` +
+    `fetch('${serverUrl}/api/bookmarklet/save',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+t},body:JSON.stringify({title:title,url:url,company:co,location:loc})})` +
+    `.then(r=>r.json()).then(d=>alert(d.ok?'\\u2705 Saved to Job Hunter! ('+d.title+')':'\\u274C '+(d.error||'Error')))` +
+    `.catch(()=>alert('\\u274C Could not reach Job Hunter'));` +
+    `})();`;
+  container.innerHTML = `<a href="${escAttr(bmJs)}" class="btn btn-primary" style="display:inline-block;cursor:grab" title="Drag me to your bookmarks bar">📌 Save to Job Hunter</a>`;
+}

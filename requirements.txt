@@ -11,3 +11,4 @@ PyJWT==2.8.0
 pdfplumber==0.11.0
 python-docx==1.1.2
 python-jobspy>=1.1.80
+apscheduler==3.10.4
