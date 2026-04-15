@@ -64,6 +64,8 @@ class IndeedScraper(BaseScraper):
             headers = {
                 **get_headers(),
                 "Accept-Language": "en-US,en;q=0.9",
+                "Referer": "https://{}".format(INDEED_DOMAINS.get(country, "www.indeed.com")),
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             }
             try:
                 resp = requests.get(base_url, headers=headers, params=params, timeout=15)
@@ -71,8 +73,13 @@ class IndeedScraper(BaseScraper):
                 error = "Indeed request failed: {}".format(e)
                 break
 
-            if resp.status_code == 403:
-                error = "Indeed blocked the request. Try again later."
+            if resp.status_code in (403, 429):
+                # Try RSS feed as fallback
+                rss_jobs = self._try_rss(base_url, params, country, now)
+                if rss_jobs:
+                    jobs.extend(rss_jobs)
+                else:
+                    error = "Indeed blocked the request. Try again later."
                 break
             if resp.status_code != 200:
                 error = "Indeed returned HTTP {}".format(resp.status_code)
@@ -96,6 +103,42 @@ class IndeedScraper(BaseScraper):
             polite_sleep(2.0, 3.5)
 
         return jobs, error
+
+    def _try_rss(self, base_url, params, country, now):
+        """Fallback: use Indeed RSS feed when HTML is blocked."""
+        try:
+            domain = INDEED_DOMAINS.get(country, "www.indeed.com")
+            rss_url = "https://{}/rss?q={}&l={}&sort=date".format(
+                domain, params.get("q", ""), params.get("l", "")
+            )
+            resp = requests.get(rss_url, headers=get_headers(), timeout=15)
+            if resp.status_code != 200:
+                return []
+            soup = BeautifulSoup(resp.text, "lxml-xml")
+            jobs = []
+            for item in soup.find_all("item")[:20]:
+                title   = item.find("title")
+                link    = item.find("link")
+                company = item.find("source")
+                desc    = item.find("description")
+                if not title or not link:
+                    continue
+                jobs.append({
+                    "title": title.get_text(strip=True),
+                    "company": company.get_text(strip=True) if company else "",
+                    "location": params.get("l", ""),
+                    "salary_min": None, "salary_max": None, "salary_raw": "",
+                    "salary_target": None, "experience_required": "",
+                    "description": BeautifulSoup(desc.get_text(), "lxml").get_text(strip=True)[:500] if desc else "",
+                    "description_snippet": "",
+                    "skills_required": "", "recruiter_name": "", "recruiter_email": "",
+                    "job_url": link.get_text(strip=True),
+                    "url_hash": make_url_hash(link.get_text(strip=True)),
+                    "source": "indeed", "country": country, "scraped_at": now,
+                })
+            return jobs
+        except Exception:
+            return []
 
     def _parse_card(self, card, base_url, country, scraped_at):
         try:

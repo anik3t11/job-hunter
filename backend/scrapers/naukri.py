@@ -51,8 +51,12 @@ class NaukriScraper(BaseScraper):
         headers = {
             **get_headers(),
             "Content-Type": "application/json",
+            "Accept": "application/json",
+            "Referer": "https://www.naukri.com/",
+            "Origin": "https://www.naukri.com",
             "appid": "109",
             "SystemId": "Naukri",
+            "gzip": "true",
         }
 
         for loc in search_locs[:3]:

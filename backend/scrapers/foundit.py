@@ -15,7 +15,7 @@ class FounditScraper(BaseScraper):
     Foundit (foundit.in) — India focused.
     Skipped automatically for non-IN country searches.
     """
-    SEARCH_URL = "https://www.foundit.in/middleware/jobsearch/v1/search"
+    SEARCH_URL = "https://www.foundit.in/middleware/jobsearch/v2/search"
     MAX_PAGES = 4
 
     def search(self, role, location, locations, country, salary_target, experience_years):

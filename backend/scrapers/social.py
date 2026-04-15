@@ -96,7 +96,10 @@ def _has_outreach_signal(text: str, email: str, url: str) -> bool:
     if email or url:
         return True
     t = (text or "").lower()
-    return any(re.search(p, t) for p in OUTREACH_SIGNALS)
+    if any(re.search(p, t) for p in OUTREACH_SIGNALS):
+        return True
+    # Broader fallback — if it mentions hiring + a role keyword, keep it
+    return bool(re.search(r"\b(hiring|recruit|opportunit|vacanc|position|role|opening)\b", t))
 
 
 def _legitimacy_score(post: dict) -> int:
@@ -141,7 +144,8 @@ def scrape_linkedin_posts_via_google(role: str, country: str = "IN", max_results
         resp = requests.post(
             "https://html.duckduckgo.com/html/",
             data={"q": query, "b": "", "kl": "in-en" if country == "IN" else ""},
-            headers=HEADERS, timeout=15,
+            headers={**HEADERS, "Referer": "https://duckduckgo.com/", "Origin": "https://duckduckgo.com"},
+            timeout=15,
         )
         resp.raise_for_status()
         links    = re.findall(r'<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>(.*?)</a>', resp.text, re.S)

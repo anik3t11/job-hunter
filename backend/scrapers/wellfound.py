@@ -18,10 +18,8 @@ class WellfoundScraper(BaseScraper):
 
     def search(self, role, location, locations, country, salary_target, experience_years):
         if not PLAYWRIGHT_AVAILABLE:
-            return [], (
-                "Wellfound requires Playwright. "
-                "Run: pip install playwright && playwright install chromium"
-            )
+            # Silently skip — Playwright not available in production
+            return [], None
         loc = locations[0] if locations else location
         return self._scrape_with_playwright(role, loc)
 
