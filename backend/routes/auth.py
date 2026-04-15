@@ -46,13 +46,14 @@ def signup(req: SignupRequest):
         raise HTTPException(400, "Email and password required")
     if len(req.password) < 6:
         raise HTTPException(400, "Password must be at least 6 characters")
-    if not is_whitelisted(email):
+    admin_email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
+    is_admin = bool(admin_email and email == admin_email)
+
+    # Admin email always bypasses whitelist (bootstrap first account)
+    if not is_admin and not is_whitelisted(email):
         raise HTTPException(403, "This email is not on the invite list. Ask the admin to add you.")
     if get_user_by_email(email):
         raise HTTPException(409, "An account with this email already exists")
-
-    admin_email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
-    is_admin = bool(admin_email and email == admin_email)
     user_id = create_user(
         email=email,
         password_hash=hash_password(req.password),
