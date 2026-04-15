@@ -26,13 +26,17 @@ function showAuthOverlay() {
 
 /* ── Bootstrap on load ── */
 document.addEventListener('DOMContentLoaded', async () => {
+  // Always wire up UI handlers first, then check token
   const token = getToken();
-  if (!token) { showAuthOverlay(); return; }
-  try {
-    const me = await api('GET', '/api/auth/me');
-    showApp(me);
-  } catch (_) {
-    clearToken();
+  if (token) {
+    try {
+      const me = await api('GET', '/api/auth/me');
+      showApp(me);
+    } catch (_) {
+      clearToken();
+      showAuthOverlay();
+    }
+  } else {
     showAuthOverlay();
   }
 

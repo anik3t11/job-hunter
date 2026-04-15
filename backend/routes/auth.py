@@ -2,8 +2,9 @@ from __future__ import annotations
 """
 Auth routes — signup, login, me, admin whitelist management.
 """
+import os
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel
 from typing import Optional
 
 from backend.database import (
@@ -50,13 +51,16 @@ def signup(req: SignupRequest):
     if get_user_by_email(email):
         raise HTTPException(409, "An account with this email already exists")
 
+    admin_email = os.environ.get("ADMIN_EMAIL", "").strip().lower()
+    is_admin = bool(admin_email and email == admin_email)
     user_id = create_user(
         email=email,
         password_hash=hash_password(req.password),
         name=req.name or email.split("@")[0],
+        is_admin=is_admin,
     )
-    token = create_token(user_id, email, is_admin=False)
-    return {"ok": True, "token": token, "user": {"id": user_id, "email": email, "name": req.name}}
+    token = create_token(user_id, email, is_admin=is_admin)
+    return {"ok": True, "token": token, "user": {"id": user_id, "email": email, "name": req.name, "is_admin": is_admin}}
 
 
 @router.post("/login")

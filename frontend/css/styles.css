@@ -52,7 +52,7 @@ input,select,textarea{font-family:inherit;font-size:inherit}
 .stat-pill.success{background:var(--success-bg);color:var(--success);border-color:#a7f3d0}
 
 /* PAGES */
-.page{display:none;padding:1.5rem;max-width:1280px;margin:0 auto}
+.page{display:block;padding:1.5rem;max-width:1280px;margin:0 auto}
 .page.active{display:block}
 
 /* CARD */
