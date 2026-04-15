@@ -37,6 +37,25 @@ FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
 app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 
 
+@app.get("/api/health")
+def health():
+    import os, traceback
+    db_url = os.environ.get("DATABASE_URL", "")
+    use_pg = bool(db_url)
+    try:
+        from backend.database import get_connection
+        conn = get_connection()
+        if use_pg:
+            conn._cur.execute("SELECT 1 as ok")
+            result = conn._cur.fetchone()
+        else:
+            result = conn.execute("SELECT 1 as ok").fetchone()
+        conn.close()
+        return {"status": "ok", "backend": "postgres" if use_pg else "sqlite", "db_url_set": bool(db_url)}
+    except Exception as e:
+        return {"status": "error", "error": str(e), "trace": traceback.format_exc(), "backend": "postgres" if use_pg else "sqlite"}
+
+
 @app.get("/")
 def serve_frontend():
     return FileResponse(str(FRONTEND_DIR / "index.html"))
