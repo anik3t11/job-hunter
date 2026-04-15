@@ -343,6 +343,9 @@ def init_db():
             CREATE INDEX IF NOT EXISTS idx_social_score ON social_posts(legitimacy_score DESC);
         """)
 
+    # ── Column migrations (safe to run on every startup) ────────────────────
+    _run_migrations(conn)
+
     # Seed admin whitelist from env
     admin_email = os.environ.get("ADMIN_EMAIL", "")
     if admin_email:
@@ -353,6 +356,35 @@ def init_db():
 
     conn.commit()
     conn.close()
+
+
+def _run_migrations(conn: "_Conn"):
+    """Add columns that were introduced after initial schema deployment."""
+    migrations = [
+        # (table, column, definition)
+        ("jobs", "location_match",  "INTEGER DEFAULT 0"),
+        ("jobs", "is_stretch",      "INTEGER DEFAULT 0"),
+        ("jobs", "skills_stretch",  "TEXT"),
+        ("jobs", "role_variant",    "TEXT"),
+    ]
+    if USE_PG:
+        for table, col, defn in migrations:
+            try:
+                conn._cur.execute(
+                    f"ALTER TABLE {table} ADD COLUMN {col} {defn}"
+                )
+                conn._pg.commit()
+            except Exception:
+                conn._pg.rollback()   # column already exists — ignore
+    else:
+        # SQLite: check pragma then add
+        existing = {
+            row[1]
+            for row in conn._sq.execute("PRAGMA table_info(jobs)").fetchall()
+        }
+        for table, col, defn in migrations:
+            if col not in existing:
+                conn._sq.execute(f"ALTER TABLE {table} ADD COLUMN {col} {defn}")
 
 
 # ═══════════════════════════════════════════════════════════════════════════
