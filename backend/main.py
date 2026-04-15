@@ -40,10 +40,14 @@ app.mount("/static", StaticFiles(directory=str(FRONTEND_DIR)), name="static")
 @app.get("/api/health")
 def health():
     import os, traceback
+    # Show all env vars containing db-related keys (masked)
+    db_vars = {k: (v[:20] + "..." if len(v) > 20 else v)
+               for k, v in os.environ.items()
+               if any(x in k.upper() for x in ["DATABASE", "POSTGRES", "PG", "DB_"])}
     db_url = os.environ.get("DATABASE_URL", "")
     use_pg = bool(db_url)
     try:
-        from backend.database import get_connection
+        from backend.database import get_connection, USE_PG as module_use_pg, DATABASE_URL as module_db_url
         conn = get_connection()
         if use_pg:
             conn._cur.execute("SELECT 1 as ok")
@@ -51,9 +55,17 @@ def health():
         else:
             result = conn.execute("SELECT 1 as ok").fetchone()
         conn.close()
-        return {"status": "ok", "backend": "postgres" if use_pg else "sqlite", "db_url_set": bool(db_url)}
+        return {
+            "status": "ok",
+            "backend": "postgres" if use_pg else "sqlite",
+            "db_url_set": bool(db_url),
+            "module_use_pg": module_use_pg,
+            "module_db_url_set": bool(module_db_url),
+            "db_related_vars": db_vars,
+        }
     except Exception as e:
-        return {"status": "error", "error": str(e), "trace": traceback.format_exc(), "backend": "postgres" if use_pg else "sqlite"}
+        return {"status": "error", "error": str(e), "trace": traceback.format_exc(),
+                "db_related_vars": db_vars}
 
 
 @app.get("/")
